@@ -31,26 +31,33 @@
 
 <body>
 
-  <div id="preloader">
+  <!-- <div id="preloader">
     <img src="../fl_set/img/preloader.png" />
     <a href="#" onClick="location.reload();" style="font-size: smaller; display: block; text-align: center;">Caricamento</a>
-  </div>
+  </div> -->
 
   <div id="up_menu" class="level noprint">
-    <span class="topsx" style="top: 25%;"><a class="back" href="javascript:history.back();">  <i class="fa fa-angle-left"></i></a></span>
-    <span class="appname"><a href="<?php echo (isset($_SESSION['POST_BACK_PAGE'])) ? $_SESSION['POST_BACK_PAGE'] : 'javascript:history.back();'; ?>"><img src="<?php echo LOGO; ?>" alt="<?php echo client; ?>"/></a></span>
-    <span class="topdx"></span>
+    <div class="topsx">
+      <a class="back" href="javascript:history.back();">
+        <i class="fa fa-angle-left is-size-3 has-text-dark"></i>
+      </a>
+    </div>
+    <div class="appname">
+      <a href="<?php echo (isset($_SESSION['POST_BACK_PAGE'])) ? $_SESSION['POST_BACK_PAGE'] : 'javascript:history.back();'; ?>">
+        <img src="<?php echo LOGO; ?>" alt="<?php echo client; ?>"/>
+      </a>
+    </div>
+    <div class="topdx"></div>
   </div>
 
 	
-  <div id="container" class="container">
+  <div class="container">
     
     <div id="content_scheda">
       <h1 class="title">Quote</h1>
       <content-container></content-container>
       </div>
     </div>
-
   </div>
 
   <script src="vendor/vue.js"></script>
