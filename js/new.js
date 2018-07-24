@@ -6,233 +6,133 @@
 // 	$("#container").fadeIn(400); 
 // });
 
-var eventBus = new Vue();
-
 Vue.component('content-container', {
 	data() {
 		return {
 			currency: '€',
+			sectionTitle: 'Stewarding',
 			show: false,
-			selectedInstance: '',
-			instances: [
+			categories: [
 				{
-					id: '91488f20-8751-4dfd-8a58-0ca6187ca690',
-					name: 'Food',
-					type: 'One-Level',
-					icon: '',
-					total: 0
-				},
-				{
-					id: 'b4b1cebb-4e15-4d19-99cb-945af47a5986',
-					name: 'Beverage',
-					type: 'One-Level',
-					icon: '',
-					total: 0
-				},
-				{
-					id: '7d8d2889-deaf-45fc-8800-be0395a11b67',
-					name: 'Stewarding',
-					type: 'Two-Level',
-					icon: '',
-					total: 0,
-					categories: [
+					id: 0,
+					name: 'Test',
+					subCategories: [
 						{
-							id: 'd8363645-e56b-4363-a8ff-2b921e7b8be4',
-							name: 'Test',
+							id: 0,
+							title: 'Chairs',
 							total: 0,
-							subCategories: [
+							show: false,
+							selectedCategory: false,
+							products: [
 								{
-									id: '22677595-f835-4855-af1c-847cd408af72',
-									title: 'Chairs',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '135696b5-193c-41a4-8f91-2f627d2eabf4',
-											name: 'White chair',
-											quantity: 0,
-											price: 4,
-											show: true,
-											option: ''
-										},
-										{
-											id: 'df1f5289-0e55-47f4-9d3c-2fd5c277827b',
-											name: 'Brown chair',
-											quantity: 0,
-											price: 3,
-											show: true,
-											option: ''
-										}
-									]
+									id: 0,
+									name: 'White chair',
+									quantity: 0,
+									price: 4,
+									show: true,
+									option: ''
 								},
 								{
-									id: '7b886f0e-4060-4a55-8032-c87c6e0180ed',
-									title: 'Table',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '5f748cad-73af-4628-ab5a-10469fc9dcbe',
-											name: 'White table',
-											quantity: 0,
-											price: 9,
-											show: true,
-											option: ''
-										},
-										{
-											id: 'e64acbc2-2cfd-45fb-bfd5-f0ed6e0eb9e0',
-											name: 'Brown table',
-											quantity: 0,
-											price: 10,
-											show: true,
-											option: ''
-										}
-									]
+									id: 1,
+									name: 'Brown chair',
+									quantity: 0,
+									price: 3,
+									show: true,
+									option: ''
+								}
+							]
+						},
+						{
+							id: 1,
+							title: 'Table',
+							total: 0,
+							show: false,
+							selectedCategory: false,
+							products: [
+								{
+									id: 0,
+									name: 'White table',
+									quantity: 0,
+									price: 9,
+									show: true,
+									option: ''
 								},
 								{
-									id: 'aa939efc-d550-4697-b7c9-9363f02eb2fa',
-									title: 'Napkins',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '6b84ac16-6070-495d-9623-3634951ffb7f',
-											name: 'White napkin',
-											quantity: 0,
-											price: 4,
-											show: true,
-											option: ''
-										},
-										{
-											id: '7ffa474c-3073-4320-a246-0529cdb40211',
-											name: 'Brown napkin',
-											quantity: 0,
-											price: 5,
-											show: true,
-											option: ''
-										}
-									]
+									id: 1,
+									name: 'Brown table',
+									quantity: 0,
+									price: 10,
+									show: true,
+									option: ''
+								}
+							]
+						},
+						{
+							id: 2,
+							title: 'Napkins',
+							total: 0,
+							show: false,
+							selectedCategory: false,
+							products: [
+								{
+									id: 0,
+									name: 'White napkin',
+									quantity: 0,
+									price: 4,
+									show: true,
+									option: ''
+								},
+								{
+									id: 1,
+									name: 'Brown napkin',
+									quantity: 0,
+									price: 5,
+									show: true,
+									option: ''
 								}
 							]
 						}
 					]
-				},
-				{
-					id: '9b3c9421-4ab6-4c4e-91d7-aae8d83f72b9',
-					name: 'Staff',
-					type: 'One-Level',
-					icon: '',
-					total: 0
-				},
-				{
-					id: 'b3efc29c-76cf-4d23-b712-6696186592b0',
-					name: 'Vehicles',
-					type: 'One-Level',
-					icon: '',
-					total: 0
 				}
 			]
 		}
 	},
 	template: `
-		<div class="app container">
-			<div v-for="instance in instances">
-				<div class="instance-picker">
-					<div>{{ instance.name }}</div>
+		<div class="container">
+			<div class="card">
+				<header class="card-header has-background-brown">
+					<h2 class="card-header-title has-text-white is-uppercase">
+						{{ sectionTitle }}
+					</h2>
+					<p class="card-header-title is-block has-text-white has-text-right is-uppercase">
+						Total: {{ sectionTotal }} {{ currency }}
+					</p>
+				</header>
+				<div class="card-content">
+					<div class="content">
+						<div>
+							<button v-for="category in categories">{{ category.name }}</button>
+						</div>
+						<category v-for="category in categories.subCategories" @data-update="categoryTotal" @data-update-remove="updateItem" :category="category" :currency="currency" :key="category.id"></category>
+					</div>
 				</div>
-				<instance :instance="instance" :currency="currency" :key="instance.id"></instance>
+				<footer class="card-footer">
+					
+				</footer>
 			</div>
-		</div>
-	`,
-	methods: {
-		updateData() {
-			console.log('instance')
-			let total = 0;
-			this.instances.forEach(instance => {
-				if (instance.type === "Two-Level") {
-					instance.categories.forEach(category => {
-						let subCategoryTotal = 0;
-						category.subCategories.forEach(subCategory => {
-							let productTotal = 0;
-							subCategory.products.forEach(product => {
-								productTotal += product.price * product.quantity;
-							});
-							subCategory.total += productTotal;
-							subCategoryTotal += subCategory.total
-						});
-						category.total += subCategoryTotal;
-					});
-				}
-			});
-		},
-		dataUpdate() {
-			this.instances.forEach(instance => {
-
-			})
-		}
-	},
-	computed: {
-		
-	},
-	mounted() {
-    eventBus.$on('add-item', newProduct => {
-      this.instances.forEach(instance => {
-				if (instance.type === "Two-Level") {
-					instance.categories.forEach(category => {
-						category.subCategories.forEach(subCategory => {
-							subCategory.products.forEach(product => {
-								if (product.id === newProduct.id) {
-									product.quantity = newProduct.quantity;
-									this.updateData();
-								}
-							});
-						});
-					});
-				}
-			});
-			console.log(newProduct)
-    });
-  }
-	
-});
-
-Vue.component('instance', {
-	props:['instance', 'currency'],
-	template: `
-		<div class="card instance">
-			<header class="card-header has-background-brown">
-				<h2 class="card-header-title has-text-white is-uppercase">
-					{{ instance.name }}
-				</h2>
-				<p class="card-header-title is-block has-text-white has-text-right is-uppercase">
-					Total: {{ instanceTotal }} {{ currency }}
-				</p>
-			</header>
-			<div class="card-content">
-				<category v-for="category in instance.categories" @data-update-add="updateItemAdd" :currency="currency" :category="category" :key="category.id"></category>
-			</div>
-			<footer class="card-footer"></footer>
+			
 		</div>
 	`,
 	computed: {
-		instanceTotal() {
+		sectionTotal() {
 			let total = 0;
-			if (this.instance.categories) {
-				this.instance.categories.forEach(category => {
-					total += category.total;
-				});
-				return total;
-			}
-			return this.instance.total;
+			this.categories.forEach(category => {
+				total += category.total;
+			});
+			return total;
 		}
 	},
 	methods: {
-		dataUpdate(newCategoryData) {
-			this.$emit('data-update', newCategoryData)
-		},
 		showCategory(category) {
 			if (category.selectedCategory === false) {
 				category.selectedCategory = true;
@@ -240,7 +140,7 @@ Vue.component('instance', {
 			category.show = !category.show;
 		},
 		categoryTotal(object) {
-			this.instances.categories.forEach((category, index) => {
+			this.categories.forEach((category, index) => {
 				if (category.id == object.id) {
 					object.products.forEach(newProduct => {
 						category.products.forEach(product => {
@@ -260,13 +160,12 @@ Vue.component('instance', {
 					productsArray.forEach(amount => {
 						total += amount;
 					});
-					this.instance.categories[index].total = total;
+					this.categories[index].total = total;
 				}
 			});
 		},
-		updateItemAdd(object) {
-			this.instance.categories.forEach(category => {
-
+		updateItem(object) {
+			this.categories.forEach(subCategory => {
 				subCategory.forEach((category, index) => {
 					if (category.id == object.id && category.name == object.name) {
 						category.products.forEach(product => {
@@ -274,61 +173,43 @@ Vue.component('instance', {
 								product.quantity = object.product.quantity;
 								product.price = object.product.price;
 								product.show = object.product.show;
-								product.option = object.product.option;
+								product.option = '';
 							}
 						});
 
-						// let productsArray = [];
-						// let total = 0;
-						// category.products.forEach(product => {
-						// 	productsArray.push(product.quantity * product.price);
-						// });
-						// productsArray.forEach(amount => {
-						// 	total += amount;
-						// });
-						// this.categories[index].total = total;
+						let productsArray = [];
+						let total = 0;
+						category.products.forEach(product => {
+							productsArray.push(product.quantity * product.price);
+						});
+						productsArray.forEach(amount => {
+							total += amount;
+						});
+						this.categories[index].total = total;
 					}
 				});
 			});
 		}
 	},
-	// created() {
-	// 	this.categories.forEach(subCategory => {
-	// 		subCategory.forEach((category, index) => {
-	// 			let productsArray = [];
-	// 			let total = 0;
-	// 			category.products.forEach(product => {
-	// 				productsArray.push(product.quantity * product.price);
-	// 			});
-	// 			productsArray.forEach(amount => {
-	// 				total += amount;
-	// 			});
-	// 			this.categories[index].total = total;
-	// 		});
-	// 	});
-	// }
+	created() {
+		this.categories.forEach(subCategory => {
+			subCategory.forEach((category, index) => {
+				let productsArray = [];
+				let total = 0;
+				category.products.forEach(product => {
+					productsArray.push(product.quantity * product.price);
+				});
+				productsArray.forEach(amount => {
+					total += amount;
+				});
+				this.categories[index].total = total;
+			});
+		});
+	}
 });
 
 Vue.component('category', {
 	props: ['category', 'currency'],
-	template: `
-		<div class="content">
-			<div class="category-picker">
-				<div>{{ category.name }}</div>
-			</div>
-
-			<sub-category v-for="subCategory in category.subCategories" @data-update-add="dataUpdateAdd" :subCategory="subCategory" :currency="currency" :key="subCategory.id"></sub-category>
-		</div>
-	`,
-	methods: {
-		dataUpdateAdd(newCategoryData) {
-			this.$emit('data-update-add', newCategoryData)
-		}
-	}
-});
-
-Vue.component('sub-category', {
-	props: ['subCategory', 'currency'],
 	template: `
 		<article class="card category">
 			<header class="card-header">
@@ -337,10 +218,10 @@ Vue.component('sub-category', {
 				</div>
 				<div class="card-header-title" @click="showCategory">
 					<p class="">
-						{{ subCategory.title }}
+						{{ category.title }}
 					</p>
 					<p class="">
-						Sub-total: {{ subCategory.total }} {{ currency }}
+						Sub-total: {{ category.total }} {{ currency }}
 					</p>
 				</div>
 			</header>
@@ -375,8 +256,8 @@ Vue.component('sub-category', {
 						<div class="modal-background"></div>
 							<div class="modal-card">
 								<header class="modal-card-head">
-									<p class="modal-card-title">{{ subCategory.title}}</p>
-									<button @click="modalLoad()" class="delete" aria-label="close"></button>
+									<p class="modal-card-title">{{ category.title}}</p>
+									<button @click="sendUp()" class="delete" aria-label="close"></button>
 								</header>
 								<section class="modal-card-body">
 									<div class="level">
@@ -404,7 +285,7 @@ Vue.component('sub-category', {
 									</table>
 								</section>
 								<footer class="modal-card-foot">
-									<button @click="modalLoad()" class="button is-success">Save changes</button>
+									<button @click="sendUp()" class="button is-success">Save changes</button>
 								</footer>
 							</div>
 						</div>
@@ -412,6 +293,8 @@ Vue.component('sub-category', {
 				</transition>
 			</footer>
 		</article >
+		
+		
 	`,
 	data() {
 		return {
@@ -427,10 +310,10 @@ Vue.component('sub-category', {
 	computed: {
 		filteredProducts() {
 			if (this.search == '') {
-				return this.subCategory.products;
+				return this.category.products;
 			}
 			let products = [];
-			this.subCategory.products.filter(product => {
+			this.category.products.filter(product => {
 				if (product.name.toLowerCase().includes(this.search.toLowerCase())) {
 					products.push(product);
 				}
@@ -439,23 +322,22 @@ Vue.component('sub-category', {
 		}
 	},
 	methods: {
-		addItem(product) {
+		addItem(item) {
 			if (this.show == false) {
 				this.show = true;
 			}
-			this.selectedProducts.push(product);
+			this.selectedProducts.push(item);
 			let newCategoryData = {
-				id: this.subCategory.id,
-				name: this.subCategory.name,
-				product: product
+				id: this.category.id,
+				products: this.selectedProducts
 			}
-			this.$emit('data-update-add', newCategoryData);
+			this.$emit('data-update', newCategoryData);
 		},
-		removeItem(product) {
+		removeItem(item) {
 			let newCategoryData = {
-				id: this.subCategory.id,
-				name: this.subCategory.name,
-				product: product
+				id: this.category.id,
+				name: this.category.name,
+				product: item
 			}
 			this.$emit('data-update-remove', newCategoryData);
 			this.selectedProducts.forEach((product, index) => {
@@ -472,12 +354,12 @@ Vue.component('sub-category', {
 		cancel() {
 			this.showModal = !this.showModal
 		},
-		dataUpdate(product) {
+		sendUp() {
 			if (this.showModal == true) {
 				this.showModal = false;
 			}
 			let newCategoryData = {
-				id: this.subCategory.id,
+				id: this.category.id,
 				products: this.selectedProducts
 			}
 			this.$emit('data-update', newCategoryData);
@@ -494,10 +376,10 @@ Vue.component('product-list-item', {
 		<tr v-show="product.show">
 			<td>{{ product.name }}</td>
 			<td>{{ product.price }} {{ currency }}</td>
-			<td><input class="input" placeholder="Search" v-model.number="cacheQuantity"></td>
+			<td><input class="input" placeholder="Search" v-model="cacheQuantity"></td>
 			<td>
 				<button v-if="added" @click="removeProduct(product)" class="button is-danger">Remove</button>
-				<button v-else @click="addProduct" class="button is-success">Add</button>
+				<button v-else @click="addProduct()" class="button is-success">Add</button>
 			</td>
 		</tr>
 	`,
@@ -518,8 +400,7 @@ Vue.component('product-list-item', {
 				show: this.product.show,
 				option: this.product.option
 			}
-			eventBus.$emit('add-item', product);
-			// this.$emit('add-item', product);
+			this.$emit('add-item', product);
 		},
 		removeProduct() {
 			this.added = !this.added;
@@ -600,7 +481,7 @@ Vue.component('product', {
 });
 
 let vm = new Vue({
-	el: '#app',
+	el: '#content_scheda',
 	data: {
 		message: 'Hello'
 		

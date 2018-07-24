@@ -53,7 +53,7 @@
 	
   <div class="container">
     
-    <div id="content_scheda">
+    <div id="app">
       <h1 class="title">Quote</h1>
       <content-container></content-container>
       </div>
