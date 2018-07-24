@@ -151,3 +151,22 @@ article .fa-plus-circle:hover {
 .small {
   width: 20%;
 }
+
+.app.container {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 80% 20%;
+}
+
+.instance {
+  grid-column: 1 / 2;
+}
+
+.card.instance {
+  min-height: 80vh;
+}
+
+.instance-picker {
+  display: flex;
+  flex-direction: column;
+}
