@@ -207,26 +207,13 @@ Vue.component('instance', {
 			}
 
 		}
+	},
+	updated() {
+		if (this.currentCategory === '') {	
+			this.currentCategory = this.instance.categories[0];
+		}
 	}
 });
-
-// Vue.component('category-pick', {
-// 	props: ['category', 'selected'],
-// 	template: `
-// 		<li  :class="{'is-active':selectedVal}" @click="selectCategory"><a>{{ category.cat_name }}</a></li>
-// 	`,
-// 	data() {
-// 		return {
-// 			selectedVal: this.selected
-// 		}
-// 	},
-// 	methods: {
-// 		selectCategory() {
-// 			this.selectedVal = !this.selectedVal;
-// 			this.$emit('category-selected', this.category);
-// 		}
-// 	}
-// })
 
 // CATEGORY COMPONENT
 Vue.component('category', {
