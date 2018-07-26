@@ -59,7 +59,7 @@
       </div>
     </div>
   </div>
-
+  <script src="vendor/axios.min.js"></script>
   <script src="vendor/vue.js"></script>
   <script src="js/main.js"></script>
 </body>

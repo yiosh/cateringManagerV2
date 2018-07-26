@@ -39,91 +39,7 @@ Vue.component('content-container', {
 					icon: '',
 					total: 0,
 					show: true,
-					categories: [
-						{
-							id: 'd8363645-e56b-4363-a8ff-2b921e7b8be4',
-							name: 'Test',
-							total: 0,
-							subCategories: [
-								{
-									id: '22677595-f835-4855-af1c-847cd408af72',
-									title: 'Chairs',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '135696b5-193c-41a4-8f91-2f627d2eabf4',
-											name: 'White chair',
-											quantity: 0,
-											price: 4,
-											show: false,
-											option: ''
-										},
-										{
-											id: 'df1f5289-0e55-47f4-9d3c-2fd5c277827b',
-											name: 'Brown chair',
-											quantity: 0,
-											price: 3,
-											show: false,
-											option: ''
-										}
-									]
-								},
-								{
-									id: '7b886f0e-4060-4a55-8032-c87c6e0180ed',
-									title: 'Table',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '5f748cad-73af-4628-ab5a-10469fc9dcbe',
-											name: 'White table',
-											quantity: 0,
-											price: 9,
-											show: false,
-											option: ''
-										},
-										{
-											id: 'e64acbc2-2cfd-45fb-bfd5-f0ed6e0eb9e0',
-											name: 'Brown table',
-											quantity: 0,
-											price: 10,
-											show: false,
-											option: ''
-										}
-									]
-								},
-								{
-									id: 'aa939efc-d550-4697-b7c9-9363f02eb2fa',
-									title: 'Napkins',
-									total: 0,
-									show: false,
-									selectedCategory: false,
-									products: [
-										{
-											id: '6b84ac16-6070-495d-9623-3634951ffb7f',
-											name: 'White napkin',
-											quantity: 0,
-											price: 4,
-											show: false,
-											option: ''
-										},
-										{
-											id: '7ffa474c-3073-4320-a246-0529cdb40211',
-											name: 'Brown napkin',
-											quantity: 0,
-											price: 5,
-											show: false,
-											option: ''
-										}
-									]
-								},
-								
-							]
-						}
-					]
+					categories: []
 				},
 				{
 					id: '9b3c9421-4ab6-4c4e-91d7-aae8d83f72b9',
@@ -154,22 +70,22 @@ Vue.component('content-container', {
 		</div>
 	`,
 	methods: {
-		updateData(type, newProduct) {
+		updateData(type, newitem) {
 			this.instances.forEach(instance => {
 				if (instance.type === "Two-Level") {
 					instance.categories.forEach(category => {
 						category.total = 0;
 						let subCategoryTotal = 0;
-						category.subCategories.forEach(subCategory => {
+						category.subcatsList.forEach(subCategory => {
 							subCategory.total = 0;
-							let productTotal = 0;
-							subCategory.products.forEach(product => {
-								if (type === '-' && product.id === newProduct.id) {
-									product.quantity = 0;
+							let itemTotal = 0;
+							subCategory.items.forEach(item => {
+								if (type === '-' && item.id === newitem.id) {
+									item.quantity = 0;
 								}
-								productTotal += product.price * product.quantity;
+								itemTotal += item.price * item.quantity;
 							});
-							subCategory.total = productTotal;
+							subCategory.total = itemTotal;
 							subCategoryTotal += subCategory.total
 						});
 						category.total = subCategoryTotal;
@@ -185,20 +101,37 @@ Vue.component('content-container', {
 					instance.show = false;
 				}
 			})
+		},
+		fetchCategories(endpoint) {
+
+			axios.get('https://stile.condivision.cloud/fl_api/v2.0/?get_stewarding&token=1')
+			.then(response => {
+				// handle success
+				this.instances[2].categories = response.data.dati;
+				console.log(response);
+			})
+			.catch(error => {
+				// handle error
+				console.log(error);
+			})
+			.then(function () {
+				// always executed
+			});
 		}
 	},
 	mounted() {
-		eventBus.$on('item-update', newProduct => {
+		this.fetchCategories();
+		eventBus.$on('item-update', newitem => {
 			this.instances.forEach(instance => {
 				if (instance.type === "Two-Level") {
 					instance.categories.forEach(category => {
-						category.subCategories.forEach(subCategory => {
-							subCategory.products.forEach(product => {
+						category.subcatsList.forEach(subCategory => {
+							subCategory.items.forEach(item => {
 								
-								if (product.id === newProduct.id) {
-									product.show = true;
-									product.quantity = newProduct.quantity;
-									this.updateData('+', newProduct);
+								if (item.id === newitem.id) {
+									item.show = true;
+									item.quantity = newitem.quantity;
+									this.updateData('+', newitem);
 								}
 							});
 						});
@@ -207,16 +140,16 @@ Vue.component('content-container', {
 			});
     });
 
-		eventBus.$on('remove-item', newProduct => {
+		eventBus.$on('remove-item', newitem => {
 			this.instances.forEach(instance => {
 				if (instance.type === "Two-Level") {
 					instance.categories.forEach(category => {
-						category.subCategories.forEach(subCategory => {
-							subCategory.products.forEach(product => {
-								if (product.id === newProduct.id) {
-									product.show = false;
-									product.quantity = newProduct.quantity;
-									this.updateData('-', newProduct);
+						category.subcatsList.forEach(subCategory => {
+							subCategory.items.forEach(item => {
+								if (item.id === newitem.id) {
+									item.show = false;
+									item.quantity = newitem.quantity;
+									this.updateData('-', newitem);
 								}
 							});
 						});
@@ -237,14 +170,24 @@ Vue.component('instance', {
 					{{ instance.name }}
 				</h2>
 				<p class="card-header-title is-block has-text-white has-text-right is-uppercase">
-					Total: {{ instanceTotal }} {{ currency }}
+					Total: {{ instance.total }} {{ currency }}
 				</p>
 			</header>
 			<div class="card-content">
-				<category v-for="category in instance.categories"  :currency="currency" :category="category" :key="category.id"></category>
+				<div class="category-picker tabs">
+					<ul>
+						<li v-for="category in instance.categories" :class="{'is-active':currentCategory.cat_name === category.cat_name}" @click="selectedCategory(category)"><a>{{ category.cat_name }}</a></li>
+					</ul>
+				</div>
+				<category v-for="category in instance.categories" v-show="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" :key="currentCategory.id"></category>
 			</div>
 		</div>
 	`,
+	data() {
+		return {
+			currentCategory: ''
+		}
+	},
 	computed: {
 		instanceTotal() {
 			let total = 0;
@@ -256,22 +199,54 @@ Vue.component('instance', {
 			}
 			return this.instance.total;
 		}
+	},
+	methods: {
+		selectedCategory(category) {
+			if (this.currentCategory.id !== category.cat_id) {	
+				this.currentCategory = category;
+			}
+
+		}
 	}
 });
 
+// Vue.component('category-pick', {
+// 	props: ['category', 'selected'],
+// 	template: `
+// 		<li  :class="{'is-active':selectedVal}" @click="selectCategory"><a>{{ category.cat_name }}</a></li>
+// 	`,
+// 	data() {
+// 		return {
+// 			selectedVal: this.selected
+// 		}
+// 	},
+// 	methods: {
+// 		selectCategory() {
+// 			this.selectedVal = !this.selectedVal;
+// 			this.$emit('category-selected', this.category);
+// 		}
+// 	}
+// })
+
+// CATEGORY COMPONENT
 Vue.component('category', {
 	props: ['category', 'currency'],
 	template: `
 		<div class="content">
-			<div class="category-picker">
-				<div>{{ category.name }}</div>
-			</div>
-
-			<sub-category v-for="subCategory in category.subCategories" :subCategory="subCategory" :currency="currency" :key="subCategory.id"></sub-category>
+			<sub-category v-for="subCategory in category.subcatsList" :subCategory="subCategory" :currency="currency" :key="subCategory.subcat_id"></sub-category>
 		</div>
-	`
+	`,
+	data() {
+		return {
+			
+		}
+	},
+	computed: {
+
+	}
 });
 
+// SUB-CATEGORY COMPONENT
 Vue.component('sub-category', {
 	props: ['subCategory', 'currency'],
 	template: `
@@ -282,10 +257,10 @@ Vue.component('sub-category', {
 				</div>
 				<div class="card-header-title" @click="showCategory">
 					<p class="">
-						{{ subCategory.title }}
+						{{ subCategory.subcat_name }}
 					</p>
 					<p class="">
-						Sub-total: {{ subCategory.total }} {{ currency }}
+						Sub-total: {{ subCategory.total=0 }} {{ currency }}
 					</p>
 				</div>
 			</header>
@@ -294,22 +269,22 @@ Vue.component('sub-category', {
 					<div class="content">
 						<table class="table is-responsive">
 							<tr>
-								<th>Product</th>
+								<th>Item</th>
 								<th>Quantity</th>
 								<th>Price</th>
 								<th>Option</th>
 								<th>Total</th>
 								<th></th>
 							</tr>
-							<tr v-if="selectedProducts.length == 0">
-								<td>There are no products added</td>
+							<tr v-show="selecteditems.length == 0">
+								<td>There are no items added</td>
 								<td></td>
 								<td></td>
 								<td></td>
 								<td></td>
 								<td></td>
 							</tr>
-							<tr v-else is="product" v-for="product in selectedProducts" :product="product" :currency="currency" :key="product.id"></tr>
+							<tr v-show="selecteditems.length > 0" is="item" v-for="item in selecteditems" :item="item" :currency="currency" :key="item.id"></tr>
 						</table>
 					</div>
 				</div>
@@ -326,7 +301,7 @@ Vue.component('sub-category', {
 								<section class="modal-card-body">
 									<div class="level">
 										<div class="level-left">
-											
+											<p>Total items: {{subCategory.items.length}}</p>
 										</div>
 										<div class="control level-right has-icons-right">
 											<input class="input" placeholder="Search" v-model="search">
@@ -338,13 +313,13 @@ Vue.component('sub-category', {
 
 									<table class="table is-responsive" >
 										<tr>
-											<th>Product</th>
+											<th>Item</th>
 											<th>Price</th>
 											<th class="small">Quantity</th>
 											<th></th>
 										</tr>
 
-										<tr is="product-list-item" v-for="product in filteredProducts" @add-item="addItem" :product="product" :currency="currency" :key="product.id"></tr>
+										<tr is="item-list-item" v-for="item in filtereditems" @add-item="addItem" @remove-item="removeItem" :item="item" :currency="currency" :key="item.id"></tr>
 
 									</table>
 								</section>
@@ -362,37 +337,41 @@ Vue.component('sub-category', {
 		return {
 			showModal: false,
 			show: false,
-			search: ''
+			search: '',
+			selecteditems: []
 		}
 	},
 	computed: {
-		filteredProducts() {
+		filtereditems() {
 			if (this.search == '') {
-				return this.subCategory.products;
+				return this.subCategory.items;
 			}
-			let products = [];
-			this.subCategory.products.filter(product => {
-				if (product.name.toLowerCase().includes(this.search.toLowerCase())) {
-					products.push(product);
+			let items = [];
+			this.subCategory.items.filter(item => {
+				if (item.descrizione.toLowerCase().includes(this.search.toLowerCase())) {
+					items.push(item);
 				}
 			})
-			return products;
-		},
-		selectedProducts() {
-			let products = [];
-			this.subCategory.products.filter(product => {
-				if (product.show) {
-					products.push(product);
-				}
-			})
-			return products;
+			return items;
 		}
 	},
 	methods: {
-		addItem() {
+		addItem(newItem) {
 			if (this.show == false) {
 				this.show = true;
 			}
+			this.subCategory.items.filter(item => {
+				if (item.id === newItem.id) {
+					this.selecteditems.push(item);
+				}
+			})
+		},
+		removeItem(itemToRemove) {
+			this.selecteditems.filter((item, index) => {
+				if (item.id === itemToRemove.id) {
+					this.selecteditems.splice(index, 1);
+				}
+			})
 		},
 		modalLoad() {
 			this.showModal = !this.showModal;
@@ -403,66 +382,69 @@ Vue.component('sub-category', {
 	},
 });
 
-Vue.component('product-list-item', {
-	props: ['product', 'currency'],
+// item LIST ITEM COMPONENT
+Vue.component('item-list-item', {
+	props: ['item', 'currency'],
 	template: `
 		<tr>
-			<td>{{ product.name }}</td>
-			<td>{{ product.price }} {{ currency }}</td>
-			<td><input class="input" placeholder="Search" v-model.number="cacheQuantity"></td>
+			<td>{{ item.descrizione }}</td>
+			<td>{{ item.ultimo_prezzo }} {{ currency }}</td>
+			<td><input class="input" placeholder="0" v-model.number="cacheQuantity"></td>
 			<td>
-				<button v-if="added" @click="removeProduct" class="button is-danger">Remove</button>
-				<button v-else @click="addProduct" class="button is-success">Add</button>
+				<button v-if="added" @click="removeitem" class="button is-danger">Remove</button>
+				<button v-else @click="additem" class="button is-success">Add</button>
 			</td>
 		</tr>
 	`,
 	data() {
 		return {
 			added: false,
-			cacheQuantity: this.product.quantity
+			cacheQuantity: this.item.quantity
 		}
 	},
 	methods: {
-		addProduct() {
+		additem() {
 			this.added = !this.added;
-			let product = {
-				id: this.product.id,
-				name: this.product.name,
+			let item = {
+				id: this.item.id,
+				name: this.item.name,
 				quantity: this.cacheQuantity,
-				price: this.product.price,
-				show: this.product.show,
-				option: this.product.option
+				price: this.item.price,
+				show: this.item.show,
+				option: this.item.option
 			}
-			eventBus.$emit('item-update', product);
-			this.$emit('add-item');
+			eventBus.$emit('item-update', item);
+			this.$emit('add-item', item);
 		},
-		removeProduct() {
+		removeitem() {
 			this.added = !this.added;
 			this.cacheQuantity = 0;
-			let product = {
-				id: this.product.id,
-				name: this.product.name,
+			let item = {
+				id: this.item.id,
+				name: this.item.name,
 				quantity: this.cacheQuantity,
-				price: this.product.price,
-				show: this.product.show,
-				option: this.product.option
+				price: this.item.price,
+				show: this.item.show,
+				option: this.item.option
 			}
 			
-			eventBus.$emit('remove-item', product);
+			eventBus.$emit('remove-item', item);
+			this.$emit('remove-item', item);
 
 		}
 	}
 });
-  
-Vue.component('product', {
-	props: ['product', 'currency'],
+
+// item COMPONENT  
+Vue.component('item', {
+	props: ['item', 'currency'],
 	template: `
 		<tr>
-			<td>{{ product.name }}</td>
-			<td>{{ product.quantity }}</td>
-			<td>{{ product.price }} {{ currency }}</td>
-			<td>{{ product.option }}</td>
-			<td>{{ product.quantity * product.price }} {{ currency }}</td>
+			<td>{{ item.descrizione }}</td>
+			<td>{{ item.quantity }}</td>
+			<td>{{ item.ultimo_prezzo }} {{ currency }}</td>
+			<td>{{ item.option }}</td>
+			<td>{{ item.quantity * item.ultimo_prezzo }} {{ currency }}</td>
 			<td>
 				<button class="button" @click="modalLoad" >Modify</button>
 			</td>
@@ -471,21 +453,21 @@ Vue.component('product', {
 					<div class="modal-background"></div>
 						<div class="modal-card">
 							<header class="modal-card-head">
-								<p class="modal-card-title">{{ product.name }}</p>
+								<p class="modal-card-title">{{ item.name }}</p>
 								<button @click="saved" class="delete" aria-label="close"></button>
 							</header>
 							<section class="modal-card-body columns">
 								<div class="column">
 									<label class="label" for="quantity">Quantity</label>
-									<input class="input" name="quantity" v-model.number="product.quantity">
+									<input class="input" name="quantity" v-model.number="item.quantity">
 								</div>
 								<div class="column">
 									<label class="label" for="price">Price {{ currency }}</label>
-									<input class="input" name="price" v-model.number="product.price">
+									<input class="input" name="price" v-model.number="item.ultimo_prezzo">
 								</div>
 								<div class="column">
 									<label class="label" for="option">Option</label>
-									<input class="input" name="option" v-model="product.option">
+									<input class="input" name="option" v-model="item.option">
 								</div>
 							</section>
 							<footer class="modal-card-foot">
@@ -504,15 +486,15 @@ Vue.component('product', {
 	},
 	methods: {
 		saved() {
-			let newProduct = {
-				id: this.product.id,
-				name: this.product.name,
-				quantity: this.product.quantity,
-				price: this.product.price,
-				show: this.product.show,
-				option: this.product.option
+			let newitem = {
+				id: this.item.id,
+				name: this.item.name,
+				quantity: this.item.quantity,
+				price: this.item.price,
+				show: this.item.show,
+				option: this.item.option
 			}
-			eventBus.$emit('item-update', newProduct);
+			eventBus.$emit('item-update', newitem);
 			this.show = !this.show;			
 		},
 		modalLoad() {
@@ -521,6 +503,7 @@ Vue.component('product', {
 	}
 });
 
+// VIEW MAIN
 let vm = new Vue({
 	el: '#app'
 });

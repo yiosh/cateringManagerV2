@@ -170,3 +170,13 @@ article .fa-plus-circle:hover {
   display: flex;
   flex-direction: column;
 }
+
+.modal-card {
+  min-width: 50%;
+  max-width: 70%;
+}
+
+/* .category-picker {
+  margin-bottom: 1em;
+  margin-right: .5em;
+} */
