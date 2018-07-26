@@ -8,6 +8,7 @@
 
 var eventBus = new Vue();
 
+// MAIN COMPONENT
 Vue.component('content-container', {
 	data() {
 		return {
@@ -186,9 +187,6 @@ Vue.component('content-container', {
 			})
 		}
 	},
-	computed: {
-		
-	},
 	mounted() {
 		eventBus.$on('item-update', newProduct => {
 			this.instances.forEach(instance => {
@@ -198,6 +196,7 @@ Vue.component('content-container', {
 							subCategory.products.forEach(product => {
 								
 								if (product.id === newProduct.id) {
+									product.show = true;
 									product.quantity = newProduct.quantity;
 									this.updateData('+', newProduct);
 								}
@@ -215,6 +214,7 @@ Vue.component('content-container', {
 						category.subCategories.forEach(subCategory => {
 							subCategory.products.forEach(product => {
 								if (product.id === newProduct.id) {
+									product.show = false;
 									product.quantity = newProduct.quantity;
 									this.updateData('-', newProduct);
 								}
@@ -227,6 +227,7 @@ Vue.component('content-container', {
   }	
 });
 
+// INSTANCE COMPONENT
 Vue.component('instance', {
 	props:['instance', 'currency'],
 	template: `
@@ -255,85 +256,7 @@ Vue.component('instance', {
 			}
 			return this.instance.total;
 		}
-	},
-	methods: {
-		dataUpdate(newCategoryData) {
-			this.$emit('data-update', newCategoryData)
-		},
-		showCategory(category) {
-			if (category.selectedCategory === false) {
-				category.selectedCategory = true;
-			}
-			category.show = !category.show;
-		},
-		categoryTotal(object) {
-			this.instances.categories.forEach((category, index) => {
-				if (category.id == object.id) {
-					object.products.forEach(newProduct => {
-						category.products.forEach(product => {
-							if (newProduct.id == product.id) {
-								product.quantity = newProduct.quantity;
-								product.price = newProduct.price;
-								product.show = newProduct.show;
-								product.option = newProduct.option;
-							}
-						})
-					})
-					let productsArray = [];
-					let total = 0;
-					category.products.forEach(product => {
-						productsArray.push(product.quantity * product.price);
-					});
-					productsArray.forEach(amount => {
-						total += amount;
-					});
-					this.instance.categories[index].total = total;
-				}
-			});
-		},
-		// updateItemAdd(object) {
-		// 	this.instance.categories.forEach(category => {
-
-		// 		subCategory.forEach((category, index) => {
-		// 			if (category.id == object.id && category.name == object.name) {
-		// 				category.products.forEach(product => {
-		// 					if (object.product.id == product.id) {
-		// 						product.quantity = object.product.quantity;
-		// 						product.price = object.product.price;
-		// 						product.show = object.product.show;
-		// 						product.option = object.product.option;
-		// 					}
-		// 				});
-
-		// 				// let productsArray = [];
-		// 				// let total = 0;
-		// 				// category.products.forEach(product => {
-		// 				// 	productsArray.push(product.quantity * product.price);
-		// 				// });
-		// 				// productsArray.forEach(amount => {
-		// 				// 	total += amount;
-		// 				// });
-		// 				// this.categories[index].total = total;
-		// 			}
-		// 		});
-		// 	});
-		// }
-	},
-	// created() {
-	// 	this.categories.forEach(subCategory => {
-	// 		subCategory.forEach((category, index) => {
-	// 			let productsArray = [];
-	// 			let total = 0;
-	// 			category.products.forEach(product => {
-	// 				productsArray.push(product.quantity * product.price);
-	// 			});
-	// 			productsArray.forEach(amount => {
-	// 				total += amount;
-	// 			});
-	// 			this.categories[index].total = total;
-	// 		});
-	// 	});
-	// }
+	}
 });
 
 Vue.component('category', {
@@ -344,14 +267,9 @@ Vue.component('category', {
 				<div>{{ category.name }}</div>
 			</div>
 
-			<sub-category v-for="subCategory in category.subCategories" @data-update-add="dataUpdateAdd" :subCategory="subCategory" :currency="currency" :key="subCategory.id"></sub-category>
+			<sub-category v-for="subCategory in category.subCategories" :subCategory="subCategory" :currency="currency" :key="subCategory.id"></sub-category>
 		</div>
-	`,
-	methods: {
-		dataUpdateAdd(newCategoryData) {
-			this.$emit('data-update-add', newCategoryData)
-		}
-	}
+	`
 });
 
 Vue.component('sub-category', {
@@ -391,7 +309,7 @@ Vue.component('sub-category', {
 								<td></td>
 								<td></td>
 							</tr>
-							<tr v-else is="product" v-for="product in selectedProducts" @update-product="updateProduct" :product="product" :currency="currency" :key="product.id"></tr>
+							<tr v-else is="product" v-for="product in selectedProducts" :product="product" :currency="currency" :key="product.id"></tr>
 						</table>
 					</div>
 				</div>
@@ -403,7 +321,7 @@ Vue.component('sub-category', {
 							<div class="modal-card">
 								<header class="modal-card-head">
 									<p class="modal-card-title">{{ subCategory.title}}</p>
-									<button @click="modalLoad()" class="delete" aria-label="close"></button>
+									<button @click="modalLoad" class="delete" aria-label="close"></button>
 								</header>
 								<section class="modal-card-body">
 									<div class="level">
@@ -426,12 +344,12 @@ Vue.component('sub-category', {
 											<th></th>
 										</tr>
 
-										<tr is="product-list-item" v-for="product in filteredProducts" @add-item="addItem" @remove-item="removeItem" :product="product" :currency="currency" :key="product.id"></tr>
+										<tr is="product-list-item" v-for="product in filteredProducts" @add-item="addItem" :product="product" :currency="currency" :key="product.id"></tr>
 
 									</table>
 								</section>
 								<footer class="modal-card-foot">
-									<button @click="modalLoad()" class="button is-success">Save changes</button>
+									<button @click="modalLoad" class="button is-success">Save changes</button>
 								</footer>
 							</div>
 						</div>
@@ -443,12 +361,8 @@ Vue.component('sub-category', {
 	data() {
 		return {
 			showModal: false,
-			count: 0,
 			show: false,
-			// selectedProducts: [],
-			search: '',
-			hover: false,
-			mouseOver: false
+			search: ''
 		}
 	},
 	computed: {
@@ -475,51 +389,16 @@ Vue.component('sub-category', {
 		}
 	},
 	methods: {
-		addItem(product) {
+		addItem() {
 			if (this.show == false) {
 				this.show = true;
 			}
-			this.selectedProducts.push(product);
-			let newCategoryData = {
-				id: this.subCategory.id,
-				name: this.subCategory.name,
-				product: product
-			}
-			// this.$emit('data-update-add', newCategoryData);
-		},
-		removeItem(product) {
-			let newCategoryData = {
-				id: this.subCategory.id,
-				name: this.subCategory.name,
-				product: product
-			}
-			// this.$emit('data-update-remove', newCategoryData);
-			this.selectedProducts.forEach((selectedProduct, index) => {
-				if (selectedProduct.id == product.id) {
-					this.selectedProducts.splice(index, 1);
-				}
-			});
-			
 		},
 		modalLoad() {
 			this.showModal = !this.showModal;
-			
-		},
-		dataUpdate(product) {
-			if (this.showModal == true) {
-				this.showModal = false;
-			}
-			let newCategoryData = {
-				id: this.subCategory.id,
-				products: this.selectedProducts
-			}
-			this.$emit('data-update', newCategoryData);
 		},
 		showCategory() {
 			this.show = !this.show;
-		},
-		updateProduct() {
-
 		}
 	},
 });
@@ -555,7 +434,7 @@ Vue.component('product-list-item', {
 				option: this.product.option
 			}
 			eventBus.$emit('item-update', product);
-			this.$emit('add-item', product);
+			this.$emit('add-item');
 		},
 		removeProduct() {
 			this.added = !this.added;
@@ -570,7 +449,6 @@ Vue.component('product-list-item', {
 			}
 			
 			eventBus.$emit('remove-item', product);
-			this.$emit('remove-item', product);
 
 		}
 	}
@@ -621,9 +499,7 @@ Vue.component('product', {
 	`,
 	data() {
 		return {
-			count: 0,
-			show: false,
-			isSelected: false
+			show: false
 		}
 	},
 	methods: {
@@ -646,9 +522,5 @@ Vue.component('product', {
 });
 
 let vm = new Vue({
-	el: '#app',
-	data: {
-		message: 'Hello'
-		
-	}
+	el: '#app'
 });
