@@ -149,21 +149,21 @@ article .fa-plus-circle:hover {
 }
 
 .small {
-  width: 20%;
+  width: 10%;
 }
 
-.app.container {
+.medium {
+  width: 50%;
+}
+
+/* .app.container {
   display: grid;
   grid-auto-flow: column;
   grid-template-columns: 80% 20%;
-}
+} */
 
 .instance {
   grid-column: 1 / 2;
-}
-
-.card.instance {
-  min-height: 80vh;
 }
 
 .instance-picker {
@@ -176,7 +176,12 @@ article .fa-plus-circle:hover {
   max-width: 70%;
 }
 
-/* .category-picker {
-  margin-bottom: 1em;
-  margin-right: .5em;
+.loading-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* .instance-name {
+  display: none;
 } */
