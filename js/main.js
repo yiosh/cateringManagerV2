@@ -19,17 +19,19 @@ Vue.component('content-container', {
 				{
 					id: '91488f20-8751-4dfd-8a58-0ca6187ca690',
 					name: 'Food',
-					type: 'One-Level',
+					type: 'Two-Level',
 					icon: 'fa-lemon',
 					show: false,
+					categories: [],
 					total: 0
 				},
 				{
 					id: 'b4b1cebb-4e15-4d19-99cb-945af47a5986',
 					name: 'Beverage',
-					type: 'One-Level',
+					type: 'Two-Level',
 					icon: 'fa-coffee',
 					show: false,
+					categories: [],
 					total: 0
 				},
 				{
@@ -73,8 +75,6 @@ Vue.component('content-container', {
 				</ul>
 			</div>
 			<instance v-for="instance in instances" v-show="instance.show" :instance="instance" :currency="currency" :key="instance.id"></instance>
-
-			
 		</div>
 	`,
 	methods: {
@@ -89,9 +89,9 @@ Vue.component('content-container', {
 							let itemTotal = 0;
 							subCategory.items.forEach(item => {
 								if (type === '-' && item.id === newitem.id) {
-									item.quantity = 0;
+									item.quantity ? item.quantity= 0 : item.qty= 0;
 								}
-								itemTotal += item.price * item.quantity;
+								itemTotal += item.price ? (item.price * item.quantity) : (item.valore * item.ultimo_prezzo);
 							});
 							subCategory.total = itemTotal;
 							subCategoryTotal += subCategory.total
@@ -131,7 +131,7 @@ Vue.component('content-container', {
 	mounted() {
 		this.selectedInstance = 'Stewarding';
 		this.fetchCategories();
-		eventBus.$on('item-update', newitem => {
+		eventBus.$on('add-item', newitem => {
 			this.instances.forEach(instance => {
 				if (instance.type === "Two-Level") {
 					instance.categories.forEach(category => {
@@ -140,7 +140,13 @@ Vue.component('content-container', {
 								
 								if (item.id === newitem.id) {
 									item.show = true;
-									item.quantity = newitem.quantity;
+									if (item.quantity) {
+										item.quantity = newitem.quantity;
+
+									}
+									if (item.qty) {
+										item.qty = newitem.quantity;
+									}
 									this.updateData('+', newitem);
 								}
 							});
@@ -180,22 +186,26 @@ Vue.component('instance', {
 					{{ instance.name }}
 				</h2>
 				<p class="card-header-title is-block has-text-white has-text-right is-uppercase">
-					Total: {{ total }} {{ currency }}
+					Total: {{ total.toFixed(2) }} {{ currency }}
 				</p>
 			</header>
-			<div class="card-content">
-			<div v-if="loading" class="loading-icon-container">
-				<i class="fas fa-spinner fa-spin icon is-large"></i>
+			<div class="card-content" v-if="instance.type == 'Two-Level'">
+				<div v-if="loading" class="loading-icon-container">
+					<i class="fas fa-spinner fa-spin icon is-large"></i>
+				</div>
+
+				<div v-show="currentCategory !== ''" class="category-picker tabs">
+					<ul>
+						<li v-for="category in instance.categories" :class="{'is-active':currentCategory.cat_name === category.cat_name}" @click="selectedCategory(category)"><a>{{ category.cat_name }}</a></li>
+					</ul>
+				</div>
+				
+				<category v-for="category in instance.categories" v-show="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :key="currentCategory.id"></category>
+
 			</div>
 
-			<div v-show="currentCategory !== ''" class="category-picker tabs">
-				<ul>
-					<li v-for="category in instance.categories" :class="{'is-active':currentCategory.cat_name === category.cat_name}" @click="selectedCategory(category)"><a>{{ category.cat_name }}</a></li>
-				</ul>
-			</div>
-			
-			<category v-for="category in instance.categories" v-show="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :key="currentCategory.id"></category>
-
+			<div class="card-content" v-else>
+				<h1>One-Level Instance - {{ instance.name }}</h1>
 			</div>
 		</div>
 	`,
@@ -286,7 +296,7 @@ Vue.component('sub-category', {
 	template: `
 		<article class="card category">
 			<header class="card-header">
-				<div class="add-category has-text-success" @click="showModal = !showModal">
+				<div class="add-category has-text-success" @click="showModal = true">
 					<i class="fas fa-plus-circle"></i>
 				</div>
 				<div class="card-header-title" @click="showCategory">
@@ -294,7 +304,7 @@ Vue.component('sub-category', {
 						{{ subCategory.subcat_name }}
 					</p>
 					<p class="">
-						Sub-total: {{ total }} {{ currency }}
+						Sub-total: {{ total.toFixed(2) }} {{ currency }}
 					</p>
 				</div>
 			</header>
@@ -310,7 +320,7 @@ Vue.component('sub-category', {
 								<th>Total</th>
 								<th></th>
 							</tr>
-							<tr v-show="selectedItems.length == 0 && addedItems.length == 0">
+							<tr v-if="addedItems.length === 0">
 								<td>There are no items added</td>
 								<td></td>
 								<td></td>
@@ -318,53 +328,55 @@ Vue.component('sub-category', {
 								<td></td>
 								<td></td>
 							</tr>
-							<tr is="added-item" v-show="addedItems.length > 0"  v-for="item in addedItems" :item="item" :currency="currency" :key="item.id"></tr>
-							<tr is="item" v-show="selectedItems.length > 0"  v-for="item in selectedItems" :item="item" :currency="currency" :key="item.id"></tr>
+							<tr is="added-item" v-show="addedItems.length > 0"  v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :key="item.id"></tr>
+
 						</table>
 					</div>
 				</div>
 			</transition>
 			<footer class="card-footer">
-				<transition name="fade">
-					<div class="modal is-active" v-show="showModal">
-						<div class="modal-background"></div>
-							<div class="modal-card">
-								<header class="modal-card-head">
-									<p class="modal-card-title">{{ subCategory.subcat_name}}</p>
-									<button @click="modalLoad" class="delete" aria-label="close"></button>
-								</header>
-								<section class="modal-card-body">
-									<div class="level">
-										<div class="level-left">
-											<p>Total items: {{subCategory.items.length}}</p>
+				<keep-alive>
+					<transition name="fade" v-if="showModal">
+						<div class="modal is-active">
+							<div class="modal-background"></div>
+								<div class="modal-card">
+									<header class="modal-card-head">
+										<p class="modal-card-title">{{ subCategory.subcat_name}}</p>
+										<button @click="closeModal" class="delete" aria-label="close"></button>
+									</header>
+									<section class="modal-card-body">
+										<div class="level">
+											<div class="level-left">
+												<p>Total items: {{subCategory.items.length}}</p>
+											</div>
+											<div class="control level-right has-icons-right">
+												<input class="input" placeholder="Search" v-model="search">
+												<span class="icon is-small is-right">
+													<i class="fas fa-search"></i>
+												</span>
+											</div>
 										</div>
-										<div class="control level-right has-icons-right">
-											<input class="input" placeholder="Search" v-model="search">
-											<span class="icon is-small is-right">
-												<i class="fas fa-search"></i>
-											</span>
-										</div>
-									</div>
 
-									<table class="table is-responsive" >
-										<tr>
-											<th>Item</th>
-											<th>Price</th>
-											<th class="small">Quantity</th>
-											<th></th>
-										</tr>
+										<table class="table is-responsive" >
+											<tr>
+												<th>Item</th>
+												<th>Price</th>
+												<th class="small">Quantity</th>
+												<th></th>
+											</tr>
 
-										<tr is="item-list" v-for="item in filtereditems" @add-item="addItem" @remove-item="removeItem" :item="item" :currency="currency" :catMinVal="catMinVal" :key="item.id"></tr>
+											<tr is="item-list" v-for="item in filtereditems" @add-item="addItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :catMinVal="catMinVal" :key="item.id"></tr>
 
-									</table>
-								</section>
-								<footer class="modal-card-foot">
-									<button @click="modalLoad" class="button is-success">Save changes</button>
-								</footer>
+										</table>
+									</section>
+									<footer class="modal-card-foot">
+										<button @click="closeModal" class="button is-success">Save changes</button>
+									</footer>
+								</div>
 							</div>
 						</div>
-					</div>
-				</transition>
+					</transition>
+				</keep-alive>
 			</footer>
 		</article >
 	`,
@@ -398,17 +410,56 @@ Vue.component('sub-category', {
 			if (this.show == false) {
 				this.show = true;
 			}
-			this.subCategory.items.filter(item => {
-				if (item.id === newItem.id) {
-					this.selectedItems.push(item);
+			this.addedItems.push(newItem);
+			// this.subCategory.items.filter(item => {
+			// 	if (item.id === newItem.id) {
+			// 		this.addedItems.push(item);
+			// 	}
+			// });
+			this.addedItems.forEach(item => {
+				if (item.quantity && item.price) {
+					this.total += item.quantity * item.price;
+				}
+
+				if (item.quantity && item.ultimo_prezzo) {
+					this.total += item.quantity * item.ultimo_prezzo;
+				}
+
+				if (item.qty) {	
+					this.total += item.qty * item.valore;
 				}
 			});
-			this.selectedItems.forEach(item => {
-				this.total += item.quantity * item.ultimo_prezzo;
-			});
 
+			const subCategoryData = {
+				id: this.subCategory.subcat_id,
+				total: this.total
+			};
+			this.$emit('subcategory-update', subCategoryData);
+		},
+		updateItem(updatedItem) {
+			this.total = 0;
+			// this.addedItems.forEach(item => {
+			// 	if (item.id === updatedItem.id) {
+			// 		console.log('oldItem', item);
+			// 		// item.quantity = updatedItem.quantity;
+			// 		// item.price = updatedItem.price;
+			// 		// item.option = updatedItem.option;
+					console.log('newItem', updatedItem);
+			// 	}
+			// });
+			
 			this.addedItems.forEach(item => {
-				this.total += item.qty * item.valore;
+				if (item.quantity && item.price) {
+					this.total += item.quantity * item.price;
+				}
+
+				if (item.quantity && item.ultimo_prezzo) {
+					this.total += item.quantity * item.ultimo_prezzo;
+				}
+
+				if (item.qty && item.valore) {	
+					this.total += item.qty * item.valore;
+				}
 			});
 
 			const subCategoryData = {
@@ -419,17 +470,23 @@ Vue.component('sub-category', {
 		},
 		removeItem(itemToRemove) {
 			this.total = 0;
-			this.selectedItems.filter((item, index) => {
+			this.addedItems.filter((item, index) => {
 				if (item.id === itemToRemove.id) {
-					this.selectedItems.splice(index, 1);
+					this.addedItems.splice(index, 1);
 				}
 			});
-			this.selectedItems.forEach(item => {
-				this.total += item.quantity * item.ultimo_prezzo;
-			});
-
 			this.addedItems.forEach(item => {
-				this.total += item.qty * item.valore;
+				if (item.quantity && item.price) {
+					this.total += item.quantity * item.price;
+				}
+
+				if (item.quantity && item.ultimo_prezzo) {
+					this.total += item.quantity * item.ultimo_prezzo;
+				}
+
+				if (item.qty) {	
+					this.total += item.qty * item.valore;
+				}
 			});
 
 			const subCategoryData = {
@@ -438,8 +495,8 @@ Vue.component('sub-category', {
 			};
 			this.$emit('subcategory-update', subCategoryData);
 		},
-		modalLoad() {
-			this.showModal = !this.showModal;
+		closeModal() {
+			this.showModal = false;
 		},
 		showCategory() {
 			this.show = !this.show;
@@ -449,7 +506,16 @@ Vue.component('sub-category', {
 		this.addedItems = this.subCategory.addedItems;
 		this.total = 0;
 		this.addedItems.forEach(item => {
-			this.total += item.qty * item.valore;
+			if (item.quantity && item.price) {
+				this.total += item.quantity * item.price;
+			}
+			if (item.qty) {
+				this.total += item.qty * item.valore;
+			}
+
+			if (item.quantity && item.ultimo_prezzo) {
+				this.total += item.quantity * item.ultimo_prezzo;
+			}
 		});
 
 		const subCategoryData = {
@@ -457,50 +523,45 @@ Vue.component('sub-category', {
 			total: this.total
 		};
 		this.$emit('subcategory-update', subCategoryData);
-	},
-	updated() {
-		
-	}
-	
+	}	
 });
 
 // ADDED ITEM COMPONENT
 Vue.component('added-item', {
-	props: ['item', 'currency'],
+	props: ['item', 'currency', 'quiverCode'],
 	template: `
 		<tr>
-			<td>{{ item.descrizione }}</td>
-			<td>{{ item.qty }}</td>
-			<td>{{ item.valore }} {{ currency }}</td>
-			<td>{{ item.option }}</td>
-			<td>{{ item.qty * item.valore }} {{ currency }}</td>
+			<td>{{ name }}</td>
+			<td>{{ quantity }}</td>
+			<td>{{ price }} {{ currency }}</td>
+			<td>{{ itemCached.option }}</td>
+			<td>{{ itemTotal }} {{ currency }}</td>
 			<td>
 				<button class="button" @click="modalLoad" >Modify</button>
 			</td>
-			<transition name="fade">
-				<div class="modal is-active" v-show="show">
+			<keep-alive>
+				<item-modal v-if="show" @item-update="updateItem" @remove-item="openRemoveModal" :loading="loading" :item="itemCached" :currency="currency"></item-modal>
+			</keep-alive>
+			<transition name="fade" v-if="removeModal">
+				<div class="modal is-active">
 					<div class="modal-background"></div>
 						<div class="modal-card">
 							<header class="modal-card-head">
-								<p class="modal-card-title">{{ item.descrizione }}</p>
-								<button @click="saved" class="delete" aria-label="close"></button>
+								<p class="modal-card-title">Do you want to remove {{ name }}?</p>
+								<button @click="closeRemoveModal" class="delete" aria-label="close"></button>
 							</header>
 							<section class="modal-card-body columns">
-								<div class="column is-one-fifth">
-									<label class="label" for="quantity">Quantity</label>
-									<input class="input" name="quantity" v-model.number="item.qty">
-								</div>
-								<div class="column is-one-quarter">
-									<label class="label" for="price">Price {{ currency }}</label>
-									<input class="input" name="price" v-model.number="item.valore">
+
+								<div class="column">
+									<button @click="removeItem" class="button is-danger" :class="{'is-loading':loading}">Yes</button>
 								</div>
 								<div class="column">
-									<label class="label" for="option">Option</label>
-									<input class="input" name="option" v-model="item.option">
+									<button @click="closeRemoveModal" class="button is-success">No</button>
 								</div>
+
 							</section>
 							<footer class="modal-card-foot">
-								<button @click="saved" class="button is-success">Save changes</button>
+								
 							</footer>
 						</div>
 					</div>
@@ -510,148 +571,373 @@ Vue.component('added-item', {
 	`,
 	data() {
 		return {
-			show: false
+			show: false,
+			removeModal: false,
+			itemCached: this.item,
+			loading: false
 		}
 	},
 	methods: {
-		saved() {
-			let newitem = {
-				id: this.item.id,
-				name: this.item.descrizione,
-				quantity: this.item.qty,
-				price: this.item.valore,
-				show: this.item.show,
-				option: this.item.option
+		updateItem(updatedItem) {
+			let item = {
+				id: updatedItem.id,
+				name: updatedItem.name,
+				quantity: updatedItem.quantity,
+				price: updatedItem.price,
+				option: updatedItem.option
 			}
-			eventBus.$emit('item-update', newitem);
-			this.show = !this.show;			
+			if (item.quantity) {
+				var queryQty = `&qty=${item.quantity}`;
+			}
+			if (item.quantity) {
+				var queryValore = `&valore=${item.price}`;
+			}
+			if (item.note) {
+				var queryNote = `&note=${item.note}`;
+			}
+			this.loading = true;
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?updateSynapsy&token=1&quiverCode=${this.quiverCode}&recordId=${item.id}${queryQty}${queryValore}${queryNote}`)
+			.then(response => {
+				console.log(response.data);
+				this.updateItemCached(updatedItem);
+				eventBus.$emit('item-update', item);
+				this.$emit('item-update', item);
+				this.loading = false;
+				this.show = !this.show;
+			})
+			.catch(error => {
+				// handle error
+				console.log(error);
+			})
+			.then(() => {
+				// always executed
+			});
+						
+		},
+		removeItem(itemId) {
+			let item = {
+				id: this.itemCached.id
+			}
+			this.loading = true;
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?removeSynapsy&token=1&quiverCode=${this.quiverCode}&recordId=${item.id}`)
+			.then(response => {
+				console.log(response.data);
+				this.loading = false;
+				this.$emit('remove-item', item);
+			})
+			.catch(error => {
+				// handle error
+				console.log(error);
+			})
+			.then(() => {
+				// always executed
+			});
+			
+
+		},
+		updateItemCached(newData) {
+			if (this.itemCached.qty) {
+				this.itemCached.qty = newData.quantity;
+			}
+
+			if (this.itemCached.quantity) {
+				this.itemCached.quantity = newData.quantity;
+			}
+
+			if (this.itemCached.valore) {
+				this.itemCached.valore = newData.price;
+			}
+
+			if (this.itemCached.price) {
+				this.itemCached.price = newData.price;
+			}
+
+			if (this.itemCached.ultimo_prezzo) {
+				this.itemCached.ultimo_prezzo = newData.price;
+			}
 		},
 		modalLoad() {
 			this.show = !this.show;
+		},
+		openRemoveModal() {
+			this.removeModal = true;
+		},
+		closeRemoveModal() {
+			this.removeModal = false;
 		}
+	},
+	computed: {
+		name() {
+			if (this.item.descrizione) {
+				return this.item.descrizione;
+			}
+
+			if (this.item.name) {
+				return this.item.name;
+			}
+		},
+		quantity() {
+			if (this.item.qty) {
+				return Number(this.itemCached.qty);
+			}
+
+			if (this.item.quantity) {
+				return Number(this.itemCached.quantity);
+			}
+		},
+		price() {
+			if (this.item.valore) {
+				return Number(this.item.valore);
+			}
+
+			if (this.item.price) {
+				return Number(this.item.price);
+			}
+
+			if (this.item.ultimo_prezzo) {
+				return Number(this.item.ultimo_prezzo);
+			}
+			
+		},
+		itemTotal() {
+			if (this.item.qty ) {
+				return Number(this.item.qty * this.item.valore);
+			}
+
+			if (this.item.quantity && this.item.ultimo_prezzo) {
+				return Number(this.item.quantity * this.item.ultimo_prezzo);
+			}
+
+			if (this.item.price) {
+				return Number(this.item.quantity * this.item.price);
+			}
+		}
+	}
+});
+
+Vue.component('item-modal', {
+	props: ['item', 'currency', 'loading'],
+	template: `
+		<transition name="fade">
+			<div class="modal is-active">
+				<div class="modal-background"></div>
+					<div class="modal-card">
+						<header class="modal-card-head">
+							<p class="modal-card-title">{{ name }}</p>
+							<button @click="update" class="delete" aria-label="close"></button>
+						</header>
+						<section class="modal-card-body columns">
+							<div class="column is-one-fifth">
+								<label class="label" for="quantity">Quantity</label>
+								<input class="input" name="quantity" v-model.number="quantityVal" :placeholder="this.quantityPlaceholder">
+							</div>
+							<div class="column is-one-quarter">
+								<label class="label" for="price">Price {{ currency }}</label>
+								<input class="input" name="price" v-model.number="priceVal" :placeholder="this.pricePlaceholder">
+							</div>
+							<div class="column">
+								<label class="label" for="option">Option</label>
+								<input class="input" name="option" v-model="item.option">
+							</div>
+						</section>
+						<footer class="modal-card-foot">
+							<button @click="update" class="button is-success" :class="{'is-loading':loading}">Save changes</button>
+							<button class="button is-danger" @click="openRemoveModal" >Delete</button>
+						</footer>
+					</div>
+				</div>
+			</div>
+		</transition>
+			
+
+	`,
+	data() {
+		return {
+			priceVal: null,
+			pricePlaceholder: this.price(),
+			quantityPlaceholder: this.quantity(),
+			quantityVal: null,
+
+		}
+	},
+	methods: {
+		update() {
+			if (this.quantityVal == null) {
+				this.quantityVal = this.quantityPlaceholder;
+			}
+
+			if (this.priceVal == null) {
+				this.priceVal = this.pricePlaceholder;
+			}
+			let updatedItem = {
+				id: this.item.id,
+				name: this.item.descrizione,
+				quantity: this.quantityVal,
+				price: this.priceVal,
+				show: this.item.show,
+				option: this.item.option
+			}
+			console.log('dataSent', updatedItem);
+			this.$emit('item-update', updatedItem);
+		},
+		quantity() {
+			if (this.item.qty) {
+				return Number(this.item.qty);
+			}
+
+			if (this.item.quantity) {
+				return Number(this.item.quantity);
+			}
+		},
+		price() {
+			if (this.item.valore) {
+				return Number(this.item.valore);
+			}
+
+			if (this.item.price) {
+				return Number(this.item.price);
+			}
+
+			if (this.item.ultimo_prezzo) {
+				return Number(this.item.ultimo_prezzo);
+			}
+		},
+		openRemoveModal() {
+			let itemId = this.item.id;
+			this.$emit('remove-item', itemId);
+		}
+	},
+	computed: {
+		name() {
+			if (this.item.descrizione) {
+				return this.item.descrizione;
+			}
+
+			if (this.item.name) {
+				return this.item.name;
+			}
+		},
 	}
 });
 
 // item LIST ITEM COMPONENT
 Vue.component('item-list', {
-	props: ['item', 'currency', 'catMinVal'],
+	props: ['item', 'currency', 'catMinVal', 'quiverCode'],
 	template: `
 		<tr>
 			<td>{{ item.descrizione }}</td>
-			<td>{{ item.ultimo_prezzo }} {{ currency }}</td>
+			<td>{{ Number(item.ultimo_prezzo).toFixed(2) }} {{ currency }}</td>
 			<td class="small"><input class="input" v-model.number="cacheQuantity"></td>
 			<td>
-				<button v-if="added" @click="removeitem" class="button is-danger">Remove</button>
-				<button v-else @click="additem" class="button is-success">Add</button>
+				<button @click="additem" class="button is-success" :class="{'is-loading':loading}">Add</button>
 			</td>
 		</tr>
 	`,
 	data() {
 		return {
 			added: false,
-			cacheQuantity: this.item.quantity ? this.item.quantity : this.catMinVal
+			cacheQuantity: 1,
+			loading: false
 		}
 	},
 	methods: {
 		additem() {
-			this.added = !this.added;
-			let item = {
-				id: this.item.id,
-				name: this.item.name,
-				quantity: this.cacheQuantity,
-				price: this.item.ultimo_prezzo,
-				show: this.item.show,
-				option: this.item.option
-			}
-			eventBus.$emit('item-update', item);
-			this.$emit('add-item', item);
-		},
-		removeitem() {
-			this.added = !this.added;
-			this.cacheQuantity = this.catMinVal;
-			let item = {
-				id: this.item.id,
-				name: this.item.name,
-				quantity: this.cacheQuantity,
-				price: this.item.ultimo_prezzo,
-				show: this.item.show,
-				option: this.item.option
-			}
-			
-			eventBus.$emit('remove-item', item);
-			this.$emit('remove-item', item);
-
+			this.loading = true;
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?createSynapsy&token=1&quiverCode=${this.quiverCode}&arrowId=${this.item.id}&descrizione=${this.item.descrizione}&qty=${this.cacheQuantity}&valore=${this.item.ultimo_prezzo}&note=${this.item.note}`)
+			.then(response => {
+				let item = {
+					id: response.data.dati,
+					name: this.item.descrizione,
+					quantity: Number(this.cacheQuantity),
+					price: this.item.ultimo_prezzo ? Number(this.item.ultimo_prezzo) : Number(this.item.valore),
+					show: this.item.show,
+					option: this.item.option
+				}
+				console.log(item);
+				// handle successù
+				console.log(response.data);
+				this.loading = false;
+				eventBus.$emit('add-item', item);
+				this.$emit('add-item', item);
+			})
+			.catch(error => {
+				// handle error
+				console.log(error);
+			})
+			.then(() => {
+				// always executed
+			});
 		}
 	}
 });
 
-// item COMPONENT  
-Vue.component('item', {
-	props: ['item', 'currency'],
-	template: `
-		<tr>
-			<td>{{ item.descrizione }}</td>
-			<td>{{ item.quantity }}</td>
-			<td>{{ item.ultimo_prezzo }} {{ currency }}</td>
-			<td>{{ item.option }}</td>
-			<td>{{ item.quantity * item.ultimo_prezzo }} {{ currency }}</td>
-			<td>
-				<button class="button" @click="modalLoad" >Modify</button>
-			</td>
-			<transition name="fade">
-				<div class="modal is-active" v-show="show">
-					<div class="modal-background"></div>
-						<div class="modal-card">
-							<header class="modal-card-head">
-								<p class="modal-card-title">{{ item.descrizione }}</p>
-								<button @click="saved" class="delete" aria-label="close"></button>
-							</header>
-							<section class="modal-card-body columns">
-								<div class="column is-one-fifth">
-									<label class="label" for="quantity">Quantity</label>
-									<input class="input" name="quantity" v-model.number="item.quantity">
-								</div>
-								<div class="column is-one-quarter">
-									<label class="label" for="price">Price {{ currency }}</label>
-									<input class="input" name="price" v-model.number="item.ultimo_prezzo">
-								</div>
-								<div class="column">
-									<label class="label" for="option">Option</label>
-									<input class="input" name="option" v-model="item.option">
-								</div>
-							</section>
-							<footer class="modal-card-foot">
-								<button @click="saved" class="button is-success">Save changes</button>
-							</footer>
-						</div>
-					</div>
-				</div>
-			</transition>
-		</tr>
-	`,
-	data() {
-		return {
-			show: false
-		}
-	},
-	methods: {
-		saved() {
-			let newitem = {
-				id: this.item.id,
-				name: this.item.name,
-				quantity: this.item.quantity,
-				price: Number(this.item.ultimo_prezzo),
-				show: this.item.show,
-				option: this.item.option
-			}
-			eventBus.$emit('item-update', newitem);
-			this.show = !this.show;			
-		},
-		modalLoad() {
-			this.show = !this.show;
-		}
-	}
-});
+// // item COMPONENT  
+// Vue.component('item', {
+// 	props: ['item', 'currency'],
+// 	template: `
+// 		<tr>
+// 			<td>{{ item.descrizione }}</td>
+// 			<td>{{ item.quantity }}</td>
+// 			<td>{{ Number(item.ultimo_prezzo).toFixed(2) }} {{ currency }}</td>
+// 			<td>{{ item.option }}</td>
+// 			<td>{{ (item.quantity * item.ultimo_prezzo).toFixed(2) }} {{ currency }}</td>
+// 			<td>
+// 				<button class="button" @click="modalLoad" >Modify</button>
+// 			</td>
+// 			<transition name="fade">
+// 				<div class="modal is-active" v-show="show">
+// 					<div class="modal-background"></div>
+// 						<div class="modal-card">
+// 							<header class="modal-card-head">
+// 								<p class="modal-card-title">{{ item.descrizione }}</p>
+// 								<button @click="saved" class="delete" aria-label="close"></button>
+// 							</header>
+// 							<section class="modal-card-body columns">
+// 								<div class="column is-one-fifth">
+// 									<label class="label" for="quantity">Quantity</label>
+// 									<input class="input" name="quantity" v-model.number="item.quantity">
+// 								</div>
+// 								<div class="column is-one-quarter">
+// 									<label class="label" for="price">Price {{ currency }}</label>
+// 									<input class="input" name="price" v-model.number="item.ultimo_prezzo">
+// 								</div>
+// 								<div class="column">
+// 									<label class="label" for="option">Option</label>
+// 									<input class="input" name="option" v-model="item.option">
+// 								</div>
+// 							</section>
+// 							<footer class="modal-card-foot">
+// 								<button @click="saved" class="button is-success">Save changes</button>
+// 							</footer>
+// 						</div>
+// 					</div>
+// 				</div>
+// 			</transition>
+// 		</tr>
+// 	`,
+// 	data() {
+// 		return {
+// 			show: false
+// 		}
+// 	},
+// 	methods: {
+// 		saved() {
+// 			let newitem = {
+// 				id: this.item.id,
+// 				name: this.item.name,
+// 				quantity: this.item.quantity,
+// 				price: Number(this.item.ultimo_prezzo),
+// 				show: this.item.show,
+// 				option: this.item.option
+// 			}
+// 			eventBus.$emit('item-update', newitem);
+// 			this.show = !this.show;			
+// 		},
+// 		modalLoad() {
+// 			this.show = !this.show;
+// 		}
+// 	}
+// });
 
 // VIEW MAIN
 let vm = new Vue({

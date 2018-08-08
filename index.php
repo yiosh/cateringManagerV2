@@ -17,11 +17,10 @@
 
   <!-- VENDOR -->
   <script src="<?php echo ROOT.$cp_admin.$cp_set; ?>jsc/fontawesome-all.min.js" type="text/javascript"></script>
-  <script src="<?php echo ROOT.$cp_admin.$cp_set; ?>jsc/toastr/toastr.min.js" type="text/javascript"></script>
   <link rel="icon" href="<?php echo ROOT.$cp_admin.$cp_set; ?>css/lay/a.ico" type="image/x-icon" /> 
   <link rel="shortcut icon" href="<?php echo ROOT.$cp_admin.$cp_set; ?>css/lay/a.ico" type="image/x-icon" />
   <link rel="apple-touch-icon" href="<?php echo ROOT.$cp_admin.$cp_set; ?>lay/a.png" />
-  <link rel="stylesheet" href="<?php echo ROOT.$cp_admin.$cp_set; ?>jsc/toastr/toastr.min.css">
+  
 
   <!-- STYLES -->
 	<link rel="stylesheet" href="css/bulma.min.css">
