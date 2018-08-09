@@ -55,7 +55,7 @@ Vue.component('content-container', {
 				{
 					id: 'b3efc29c-76cf-4d23-b712-6696186592b0',
 					name: 'Vehicles',
-					type: 'One-Level',
+					type: 'Two-Level',
 					icon: 'fa-truck',
 					show: false,
 					categories: [],
@@ -129,6 +129,10 @@ Vue.component('content-container', {
 
 			if (instance === 'Stewarding') {
 				instanceParameter = 'get_stewarding';
+			}
+
+			if (instance === 'Vehicles') {
+				instanceParameter = 'get_veichels';
 			}
 
 			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?${instanceParameter}&token=1`)
@@ -347,7 +351,6 @@ Vue.component('sub-category', {
 								<td></td>
 							</tr>
 							<tr is="added-item" v-show="addedItems.length > 0"  v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :key="item.id"></tr>
-
 						</table>
 					</div>
 				</div>
@@ -748,6 +751,7 @@ Vue.component('added-item', {
 		}
 	}
 });
+
 
 Vue.component('item-modal', {
 	props: ['item', 'currency', 'loading'],
