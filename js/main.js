@@ -49,6 +49,7 @@ Vue.component('content-container', {
 					type: 'One-Level',
 					icon: 'fa-address-card',
 					show: false,
+					categories: [],
 					total: 0
 				},
 				{
@@ -57,6 +58,7 @@ Vue.component('content-container', {
 					type: 'One-Level',
 					icon: 'fa-truck',
 					show: false,
+					categories: [],
 					total: 0
 				}
 			]
@@ -74,7 +76,9 @@ Vue.component('content-container', {
 					</li>
 				</ul>
 			</div>
-			<instance v-for="instance in instances" v-show="instance.show" :instance="instance" :currency="currency" :key="instance.id"></instance>
+			<keep-alive>
+				<instance v-for="instance in instances" v-if="instance.show" :instance="instance" :currency="currency" :key="instance.id"></instance>
+			</keep-alive>
 		</div>
 	`,
 	methods: {
@@ -102,21 +106,35 @@ Vue.component('content-container', {
 			});
 		},
 		showInstance(clickedInstance) {
-			this.instances.forEach(instance => {
+			this.instances.forEach((instance, index) => {
 				if (instance.id === clickedInstance.id) {
 					this.selectedInstance = instance.name;
 					instance.show = true;
+					this.fetchCategories(this.selectedInstance, index);
 				} else {
 					instance.show = false;
 				}
 			})
 		},
-		fetchCategories(endpoint) {
+		fetchCategories(instance, index) {
+			let instanceParameter;
 
-			axios.get('https://stile.condivision.cloud/fl_api/v2.0/?get_stewarding&token=1')
+			if (instance === 'Food') {
+				instanceParameter = 'get_food';
+			}
+
+			if (instance === 'Beverage') {
+				instanceParameter = 'get_beverage';
+			}
+
+			if (instance === 'Stewarding') {
+				instanceParameter = 'get_stewarding';
+			}
+
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?${instanceParameter}&token=1`)
 			.then(response => {
 				// handle success
-				this.instances[2].categories = response.data.dati;
+				this.instances[index].categories = response.data.dati;
 			})
 			.catch(error => {
 				// handle error
@@ -130,7 +148,7 @@ Vue.component('content-container', {
 	},
 	mounted() {
 		this.selectedInstance = 'Stewarding';
-		this.fetchCategories();
+		this.fetchCategories(this.selectedInstance, 2);
 		eventBus.$on('add-item', newitem => {
 			this.instances.forEach(instance => {
 				if (instance.type === "Two-Level") {
