@@ -221,8 +221,9 @@ Vue.component('instance', {
 						<li v-for="category in instance.categories" :class="{'is-active':currentCategory.cat_name === category.cat_name}" @click="selectedCategory(category)"><a>{{ category.cat_name }}</a></li>
 					</ul>
 				</div>
-				
-				<category v-for="category in instance.categories" v-show="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :key="currentCategory.id"></category>
+				<keep-alive>
+					<category v-for="category in instance.categories" v-if="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :key="currentCategory.id"></category>
+				</keep-alive>
 
 			</div>
 
@@ -321,7 +322,7 @@ Vue.component('sub-category', {
 				<div class="add-category has-text-success" @click="showModal = true">
 					<i class="fas fa-plus-circle"></i>
 				</div>
-				<div class="card-header-title" @click="showCategory">
+				<div class="card-header-title" @click="showCategoryContent">
 					<p class="">
 						{{ subCategory.subcat_name }}
 					</p>
@@ -331,29 +332,31 @@ Vue.component('sub-category', {
 				</div>
 			</header>
 			<transition name="fade">
-				<div class="card-content" v-show="show">
-					<div class="content">
-						<table class="table is-responsive">
-							<tr>
-								<th>Item</th>
-								<th>Quantity</th>
-								<th>Price</th>
-								<th>Option</th>
-								<th>Total</th>
-								<th></th>
-							</tr>
-							<tr v-if="addedItems.length === 0">
-								<td>There are no items added</td>
-								<td></td>
-								<td></td>
-								<td></td>
-								<td></td>
-								<td></td>
-							</tr>
-							<tr is="added-item" v-show="addedItems.length > 0"  v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :key="item.id"></tr>
-						</table>
+				<keep-alive>
+					<div class="card-content" v-if="showCategory">
+						<div class="content">
+							<table class="table is-responsive">
+								<tr>
+									<th>Item</th>
+									<th>Quantity</th>
+									<th>Price</th>
+									<th>Option</th>
+									<th>Total</th>
+									<th></th>
+								</tr>
+								<tr v-if="addedItems.length === 0">
+									<td>There are no items added</td>
+									<td></td>
+									<td></td>
+									<td></td>
+									<td></td>
+									<td></td>
+								</tr>
+								<tr is="added-item" v-else v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :key="item.id"></tr>
+							</table>
+						</div>
 					</div>
-				</div>
+				</keep-alive>
 			</transition>
 			<footer class="card-footer">
 				<keep-alive>
@@ -396,6 +399,7 @@ Vue.component('sub-category', {
 								</div>
 							</div>
 						</div>
+
 					</transition>
 				</keep-alive>
 			</footer>
@@ -404,7 +408,7 @@ Vue.component('sub-category', {
 	data() {
 		return {
 			showModal: false,
-			show: false,
+			showCategory: false,
 			search: '',
 			selectedItems: [],
 			addedItems: [],
@@ -519,8 +523,8 @@ Vue.component('sub-category', {
 		closeModal() {
 			this.showModal = false;
 		},
-		showCategory() {
-			this.show = !this.show;
+		showCategoryContent() {
+			this.showCategory = !this.showCategory;
 		}
 	},
 	mounted() {
