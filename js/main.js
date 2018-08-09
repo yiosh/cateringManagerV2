@@ -64,7 +64,7 @@ Vue.component('content-container', {
 	},
 	template: `
 		<div class="app container">
-			<div class="instance-picker tabs">
+			<div class="instance-picker tabs is-centered">
 				<ul>
 					<li v-for="instance in instances" :title="instance.name" :class="{'is-active':selectedInstance === instance.name}" :key="instance.id" @click="showInstance(instance)">
 						<a>
@@ -370,7 +370,7 @@ Vue.component('sub-category', {
 										</table>
 									</section>
 									<footer class="modal-card-foot">
-										<button @click="closeModal" class="button is-success">Save changes</button>
+
 									</footer>
 								</div>
 							</div>
@@ -533,14 +533,19 @@ Vue.component('added-item', {
 		<tr>
 			<td>{{ name }}</td>
 			<td>{{ quantity }}</td>
-			<td>{{ price }} {{ currency }}</td>
+			<td>{{ price.toFixed(2) }} {{ currency }}</td>
 			<td>{{ itemCached.option }}</td>
-			<td>{{ itemTotal }} {{ currency }}</td>
+			<td>{{ itemTotal.toFixed(2) }} {{ currency }}</td>
 			<td>
-				<button class="button" @click="modalLoad" >Modify</button>
+				<a  class="button is-fullwidth" @click="openItemModal">
+					<span class="icon">
+						<i class="far fa-edit"></i>
+					</span>
+					<span>Modify</span>
+				</a>
 			</td>
 			<keep-alive>
-				<item-modal v-if="show" @item-update="updateItem" @remove-item="openRemoveModal" :loading="loading" :item="itemCached" :currency="currency"></item-modal>
+				<item-modal v-if="itemModal" @item-update="updateItem" @remove-item="openRemoveModal" @close-item-modal="closeItemModal" :loading="loading" :item="itemCached" :currency="currency"></item-modal>
 			</keep-alive>
 			<transition name="fade" v-if="removeModal">
 				<div class="modal is-active">
@@ -550,15 +555,23 @@ Vue.component('added-item', {
 								<p class="modal-card-title">Do you want to remove {{ name }}?</p>
 								<button @click="closeRemoveModal" class="delete" aria-label="close"></button>
 							</header>
-							<section class="modal-card-body columns">
-
-								<div class="column">
-									<button @click="removeItem" class="button is-danger" :class="{'is-loading':loading}">Yes</button>
+							<section class="modal-card-body columns is-mobile is-centered">
+								<div class="column is-one-quarter">
+									<a class="button is-success is-fullwidth" :class="{'is-loading':loading}" @click="removeItem">
+										<span class="icon">
+											<i class="far fa-check-circle"></i>
+										</span>
+										<span>Yes</span>
+									</a>
 								</div>
-								<div class="column">
-									<button @click="closeRemoveModal" class="button is-success">No</button>
+								<div class="column is-one-quarter">
+									<a class="button is-danger is-fullwidth" @click="closeRemoveModal">
+										<span class="icon">
+											<i class="far fa-times-circle"></i>
+										</span>
+										<span>No</span>
+									</a>
 								</div>
-
 							</section>
 							<footer class="modal-card-foot">
 								
@@ -571,10 +584,10 @@ Vue.component('added-item', {
 	`,
 	data() {
 		return {
-			show: false,
-			removeModal: false,
 			itemCached: this.item,
-			loading: false
+			itemModal: false,
+			loading: false,
+			removeModal: false
 		}
 	},
 	methods: {
@@ -656,8 +669,11 @@ Vue.component('added-item', {
 				this.itemCached.ultimo_prezzo = newData.price;
 			}
 		},
-		modalLoad() {
-			this.show = !this.show;
+		openItemModal() {
+			this.itemModal = true;
+		},
+		closeItemModal() {
+			this.itemModal = false;
 		},
 		openRemoveModal() {
 			this.removeModal = true;
@@ -724,14 +740,14 @@ Vue.component('item-modal', {
 					<div class="modal-card">
 						<header class="modal-card-head">
 							<p class="modal-card-title">{{ name }}</p>
-							<button @click="update" class="delete" aria-label="close"></button>
+							<button @click="closeItemModal" class="delete" aria-label="close"></button>
 						</header>
-						<section class="modal-card-body columns">
+						<section class="modal-card-body columns is-mobile is-centered">
 							<div class="column is-one-fifth">
 								<label class="label" for="quantity">Quantity</label>
 								<input class="input" name="quantity" v-model.number="quantityVal" :placeholder="this.quantityPlaceholder">
 							</div>
-							<div class="column is-one-quarter">
+							<div class="column is-one-fifth">
 								<label class="label" for="price">Price {{ currency }}</label>
 								<input class="input" name="price" v-model.number="priceVal" :placeholder="this.pricePlaceholder">
 							</div>
@@ -740,9 +756,23 @@ Vue.component('item-modal', {
 								<input class="input" name="option" v-model="item.option">
 							</div>
 						</section>
-						<footer class="modal-card-foot">
-							<button @click="update" class="button is-success" :class="{'is-loading':loading}">Save changes</button>
-							<button class="button is-danger" @click="openRemoveModal" >Delete</button>
+						<footer class="modal-card-foot columns">
+							<div class="column is-one-quarter">
+								<a class="button is-success is-fullwidth" :class="{'is-loading':loading}" @click="updateItem">
+									<span class="icon">
+										<i class="far fa-save"></i>
+									</span>
+									<span>Save changes</span>
+								</a>
+							</div>
+							<div class="column is-one-quarter">
+								<a class="button is-danger is-fullwidth" @click="openRemoveModal">
+									<span class="icon">
+										<i class="far fa-trash-alt"></i>
+									</span>
+									<span>Delete</span>
+								</a>
+							</div>
 						</footer>
 					</div>
 				</div>
@@ -761,7 +791,7 @@ Vue.component('item-modal', {
 		}
 	},
 	methods: {
-		update() {
+		updateItem() {
 			if (this.quantityVal == null) {
 				this.quantityVal = this.quantityPlaceholder;
 			}
@@ -805,6 +835,9 @@ Vue.component('item-modal', {
 		openRemoveModal() {
 			let itemId = this.item.id;
 			this.$emit('remove-item', itemId);
+		},
+		closeItemModal() {
+			this.$emit('close-item-modal');
 		}
 	},
 	computed: {
@@ -829,7 +862,12 @@ Vue.component('item-list', {
 			<td>{{ Number(item.ultimo_prezzo).toFixed(2) }} {{ currency }}</td>
 			<td class="small"><input class="input" v-model.number="cacheQuantity"></td>
 			<td>
-				<button @click="additem" class="button is-success" :class="{'is-loading':loading}">Add</button>
+				<a class="button is-success is-fullwidth" :class="{'is-loading':loading}" @click="additem">
+					<span class="icon" v-if="addedItem">
+						<i class="fas fa-plus-circle"></i>
+					</span>
+					<span>{{ addMessage }}</span>
+				</a>
 			</td>
 		</tr>
 	`,
@@ -837,7 +875,9 @@ Vue.component('item-list', {
 		return {
 			added: false,
 			cacheQuantity: 1,
-			loading: false
+			loading: false,
+			addMessage: 'Add',
+			addedItem: true
 		}
 	},
 	methods: {
@@ -859,6 +899,12 @@ Vue.component('item-list', {
 				this.loading = false;
 				eventBus.$emit('add-item', item);
 				this.$emit('add-item', item);
+				this.addedItem = false;
+				this.addMessage = 'Added!';
+				setTimeout(() => {
+					this.addedItem = true;
+					this.addMessage = 'Add'
+			}, 2000);
 			})
 			.catch(error => {
 				// handle error
