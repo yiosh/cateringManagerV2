@@ -9,6 +9,7 @@ Vue.component('content-container', {
 		return {
 			currency: '€',
 			show: false,
+			staff: false,
 			selectedInstance: '',
 			instances: [
 				{
@@ -41,7 +42,7 @@ Vue.component('content-container', {
 				{
 					id: '9b3c9421-4ab6-4c4e-91d7-aae8d83f72b9',
 					name: 'Staff',
-					type: 'One-Level',
+					type: 'Two-Level',
 					icon: 'fa-address-card',
 					show: false,
 					categories: [],
@@ -72,7 +73,7 @@ Vue.component('content-container', {
 				</ul>
 			</div>
 			<keep-alive>
-				<instance v-for="instance in instances" v-if="instance.show" :instance="instance" :currency="currency" :key="instance.id"></instance>
+				<instance v-for="instance in instances" v-if="instance.show" :instance="instance" :currency="currency" :staff="staff" :key="instance.id"></instance>
 			</keep-alive>
 		</div>
 	`,
@@ -105,6 +106,11 @@ Vue.component('content-container', {
 				if (instance.id === clickedInstance.id) {
 					this.selectedInstance = instance.name;
 					instance.show = true;
+					if (this.selectedInstance === 'Staff') {
+						this.staff = true;
+					} else {
+						this.staff = false;
+					}
 					this.fetchCategories(this.selectedInstance, index);
 				} else {
 					instance.show = false;
@@ -124,6 +130,10 @@ Vue.component('content-container', {
 
 			if (instance === 'Stewarding') {
 				instanceParameter = 'get_stewarding';
+			}
+
+			if (instance === 'Staff') {
+				instanceParameter = 'get_staff';
 			}
 
 			if (instance === 'Vehicles') {
@@ -195,7 +205,7 @@ Vue.component('content-container', {
 
 // INSTANCE COMPONENT
 Vue.component('instance', {
-	props: ['instance', 'currency'],
+	props: ['instance', 'currency', 'staff'],
 	template: `
 		<div class="card instance">
 			<header class="card-header has-background-brown">
@@ -217,7 +227,7 @@ Vue.component('instance', {
 					</ul>
 				</div>
 				<keep-alive>
-					<category v-for="category in instance.categories" v-if="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :key="currentCategory.id"></category>
+					<category v-for="category in instance.categories" v-if="currentCategory.cat_name === category.cat_name" :currency="currency" :category="category" @category-update="updateTotal" :staff="staff" :key="currentCategory.id"></category>
 				</keep-alive>
 
 			</div>
@@ -274,13 +284,14 @@ Vue.component('category', {
 	props: ['category', 'currency'],
 	template: `
 		<div class="content">
-			<sub-category v-for="subCategory in category.subcatsList" :catMinVal="category.cat_minVal" :subCategory="subCategory" :currency="currency" @subcategory-update="updateTotal" :key="subCategory.subcat_id"></sub-category>
+			<sub-category v-for="subCategory in category.subcatsList" :catMinVal="category.cat_minVal" :subCategory="subCategory" :currency="currency" @subcategory-update="updateTotal" :staff="staff" :key="subCategory.subcat_id"></sub-category>
 		</div>
 	`,
 	data() {
 		return {
 			totalSubCategories: [],
-			total: 0
+			total: 0,
+			staff: false
 		}
 	},
 	methods: {
@@ -305,12 +316,17 @@ Vue.component('category', {
 			}
 			this.$emit('category-update', categoryTotal);
 		}
+	},
+	mounted() {
+		if (this.category.cat_name === 'Staff') {
+			this.staff = true;
+		}
 	}
 });
 
 // SUB-CATEGORY COMPONENT
 Vue.component('sub-category', {
-	props: ['subCategory', 'currency', 'catMinVal'],
+	props: ['subCategory', 'currency', 'catMinVal', 'staff'],
 	template: `
 		<article class="card category">
 			<header class="card-header">
@@ -334,6 +350,7 @@ Vue.component('sub-category', {
 								<tr>
 									<th>Item</th>
 									<th>Quantity</th>
+									<th v-if="staff">Hours</th>
 									<th>Price</th>
 									<th>Option</th>
 									<th>Total</th>
@@ -347,7 +364,7 @@ Vue.component('sub-category', {
 									<td></td>
 									<td></td>
 								</tr>
-								<tr is="added-item" v-else v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :key="item.id"></tr>
+								<tr is="added-item" v-else v-for="item in addedItems" @item-update="updateItem" @remove-item="removeItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :staff="staff" :key="item.id"></tr>
 							</table>
 						</div>
 					</div>
@@ -381,10 +398,11 @@ Vue.component('sub-category', {
 												<th>Item</th>
 												<th>Price</th>
 												<th class="small">Quantity</th>
+												<th v-if="staff" class="small">Hours</th>
 												<th></th>
 											</tr>
 
-											<tr is="item-list" v-for="item in filtereditems" @add-item="addItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :catMinVal="catMinVal" :key="item.id"></tr>
+											<tr is="item-list" v-for="item in filtereditems" @add-item="addItem" :quiverCode="subCategory.quiverCode" :item="item" :currency="currency" :catMinVal="catMinVal" :staff="staff" :key="item.id"></tr>
 
 										</table>
 									</section>
@@ -405,7 +423,6 @@ Vue.component('sub-category', {
 			showModal: false,
 			showCategory: false,
 			search: '',
-			selectedItems: [],
 			addedItems: [],
 			total: 0
 		}
@@ -427,17 +444,17 @@ Vue.component('sub-category', {
 	methods: {
 		addItem(newItem) {
 			this.total = 0;
-			if (this.show == false) {
-				this.show = true;
+			if (this.showCategory == false) {
+				this.showCategory = true;
 			}
 			this.addedItems.push(newItem);
 			this.addedItems.forEach(item => {
-				if (item.quantity && item.price) {
-					this.total += item.quantity * item.price;
+				if (item.ultimo_prezzo) {
+					this.total += item.quantity * item.ultimo_prezzo;
 				}
 
-				if (item.quantity && item.ultimo_prezzo) {
-					this.total += item.quantity * item.ultimo_prezzo;
+				if (item.price) {
+					this.total += item.quantity * item.price;
 				}
 
 				if (item.qty) {	
@@ -453,20 +470,23 @@ Vue.component('sub-category', {
 		},
 		updateItem(updatedItem) {
 			this.total = 0;
-			console.log('newItem', updatedItem);
+
+			if (updatedItem.discount) {
+				let index = this.addedItems.findIndex( item => {
+					return item.id === updatedItem.id;
+				});
+				this.addedItems[index].valore -= updatedItem.price * updatedItem.discount;
+			}
 			
 			this.addedItems.forEach(item => {
-				if (item.quantity && item.price) {
+				if (item.price) {
 					this.total += item.quantity * item.price;
-				}
-
-				if (item.quantity && item.ultimo_prezzo) {
+				} else if (item.ultimo_prezzo) {
 					this.total += item.quantity * item.ultimo_prezzo;
-				}
-
-				if (item.qty && item.valore) {	
+				} else if (item.valore) {	
 					this.total += item.qty * item.valore;
 				}
+
 			});
 
 			const subCategoryData = {
@@ -513,14 +533,14 @@ Vue.component('sub-category', {
 		this.addedItems = this.subCategory.addedItems;
 		this.total = 0;
 		this.addedItems.forEach(item => {
-			if (item.quantity && item.price) {
+			if (item.price) {
 				this.total += item.quantity * item.price;
 			}
-			if (item.qty) {
+			if (item.valore) {
 				this.total += item.qty * item.valore;
 			}
 
-			if (item.quantity && item.ultimo_prezzo) {
+			if (item.ultimo_prezzo) {
 				this.total += item.quantity * item.ultimo_prezzo;
 			}
 		});
@@ -535,11 +555,12 @@ Vue.component('sub-category', {
 
 // ADDED ITEM COMPONENT
 Vue.component('added-item', {
-	props: ['item', 'currency', 'quiverCode'],
+	props: ['item', 'currency', 'quiverCode', 'staff'],
 	template: `
 		<tr>
 			<td>{{ name }}</td>
 			<td>{{ quantity }}</td>
+			<td v-if="staff">{{ hours }}</td>
 			<td>{{ price.toFixed(2) }} {{ currency }}</td>
 			<td>{{ itemCached.option }}</td>
 			<td>{{ itemTotal.toFixed(2) }} {{ currency }}</td>
@@ -552,7 +573,7 @@ Vue.component('added-item', {
 				</a>
 			</td>
 			<keep-alive>
-				<item-modal v-if="itemModal" @item-update="updateItem" @remove-item="openRemoveModal" @close-item-modal="closeItemModal" :loading="loading" :item="itemCached" :currency="currency"></item-modal>
+				<item-modal v-if="itemModal" @item-update="updateItem" @remove-item="openRemoveModal" @close-item-modal="closeItemModal" :loading="loading" :item="itemCached" :staff="staff" :currency="currency"></item-modal>
 			</keep-alive>
 			<transition name="fade" v-if="removeModal">
 				<div class="modal is-active">
@@ -594,35 +615,34 @@ Vue.component('added-item', {
 			itemCached: this.item,
 			itemModal: false,
 			loading: false,
-			removeModal: false
+			removeModal: false,
+			hours: this.item.moltiplicatore ? this.item.moltiplicatore : this.item.hours
 		}
 	},
 	methods: {
 		updateItem(updatedItem) {
-			let item = {
-				id: updatedItem.id,
-				name: updatedItem.name,
-				quantity: updatedItem.quantity,
-				price: updatedItem.price,
-				option: updatedItem.option
+			
+			if (updatedItem.quantity) {
+				var queryQty = `&qty=${updatedItem.quantity}`;
 			}
-			if (item.quantity) {
-				var queryQty = `&qty=${item.quantity}`;
+			if (updatedItem.quantity) {
+				var queryValore = `&valore=${updatedItem.price}`;
 			}
-			if (item.quantity) {
-				var queryValore = `&valore=${item.price}`;
+			if (updatedItem.note) {
+				var queryNote = `&note=${updatedItem.note}`;
 			}
-			if (item.note) {
-				var queryNote = `&note=${item.note}`;
+
+			if (updatedItem.hours) {
+				var queryHours = `&moltiplicatore=${updatedItem.hours}`;
 			}
 			this.loading = true;
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?updateSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&recordId=${item.id}${queryQty}${queryValore}${queryNote}`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?updateSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&recordId=${updatedItem.id}${queryQty}${queryValore}${queryNote}${queryHours}`)
 			.then(response => {
 				console.log(response.data);
 				this.updateItemCached(updatedItem);
 				this.itemModal = false;
-				eventBus.$emit('item-update', item);
-				this.$emit('item-update', item);
+				eventBus.$emit('item-update', updatedItem);
+				this.$emit('item-update', updatedItem);
 				this.loading = false;
 				this.show = !this.show;
 			})
@@ -694,54 +714,52 @@ Vue.component('added-item', {
 		name() {
 			if (this.item.descrizione) {
 				return this.item.descrizione;
-			}
-
-			if (this.item.name) {
+			} else if (this.item.name) {
 				return this.item.name;
+			} else if (this.item.funzione) {
+				return this.item.funzione;
 			}
 		},
 		quantity() {
 			if (this.item.qty) {
 				return Number(this.itemCached.qty);
-			}
-
-			if (this.item.quantity) {
+			} else if (this.item.quantity) {
 				return Number(this.itemCached.quantity);
 			}
 		},
 		price() {
 			if (this.item.valore) {
 				return Number(this.item.valore);
-			}
-
-			if (this.item.price) {
+			} else if (this.item.price) {
 				return Number(this.item.price);
-			}
-
-			if (this.item.ultimo_prezzo) {
+			} else if (this.item.ultimo_prezzo) {
 				return Number(this.item.ultimo_prezzo);
 			}
-			
+			return Number(0);
 		},
 		itemTotal() {
-			if (this.item.qty ) {
-				return Number(this.item.qty * this.item.valore);
+			let total = 0;
+			if (this.item.valore ) {
+				total = Number(this.item.qty * this.item.valore);
+			} else if (this.item.ultimo_prezzo) {
+				total = Number(this.item.quantity * this.item.ultimo_prezzo);
+			} else if (this.item.price) {
+				total = Number((this.item.quantity * this.item.price) * this.hours);
 			}
-
-			if (this.item.quantity && this.item.ultimo_prezzo) {
-				return Number(this.item.quantity * this.item.ultimo_prezzo);
+			if (this.staff) {
+				total *= this.hours;
 			}
-
-			if (this.item.price) {
-				return Number(this.item.quantity * this.item.price);
+			if (this.item.discount) {
+				total -= total * this.item.discount;
 			}
+		return total;
 		}
 	}
 });
 
 
 Vue.component('item-modal', {
-	props: ['item', 'currency', 'loading'],
+	props: ['item', 'currency', 'loading', 'staff'],
 	template: `
 		<transition name="fade">
 			<div class="modal is-active">
@@ -756,9 +774,13 @@ Vue.component('item-modal', {
 								<label class="label" for="quantity">Quantity</label>
 								<input class="input" name="quantity" v-model.number="quantityVal" :placeholder="this.quantityPlaceholder">
 							</div>
+							<div v-if="staff" class="column is-one-fifth">
+								<label class="label" for="hours">Hours</label>
+								<input class="input" name="hours" v-model.number="hours" :placeholder="this.quantityPlaceholder">
+							</div>
 							<div class="column is-one-fifth">
 								<label class="label" for="price">Price {{ currency }}</label>
-								<input class="input" name="price" v-model.number="priceVal" :placeholder="this.pricePlaceholder">
+								<input class="input" name="price" v-model.number="priceVal" @change="priceChanged" :placeholder="this.pricePlaceholder">
 							</div>
 							<div class="column is-one-fifth">
 								<label class="label" for="discount">Discount</label>
@@ -791,6 +813,9 @@ Vue.component('item-modal', {
 									<span>Delete</span>
 								</a>
 							</div>
+							<div class="column">
+								<p class="modal-card-title has-text-centered">Total: {{ totalPrice.toFixed(2) }}{{ currency }}</p>
+							</div>
 						</footer>
 					</div>
 				</div>
@@ -801,10 +826,11 @@ Vue.component('item-modal', {
 	`,
 	data() {
 		return {
-			priceVal: this.price(),
+			priceVal: this.item.valore ? Number(this.item.valore) : this.price(),
 			pricePlaceholder: this.price(),
 			quantityPlaceholder: this.quantity(),
-			quantityVal: this.quantity(),
+			quantityVal: this.item.qty ? Number(this.item.qty) : this.quantity(),
+			hours: this.item.moltiplicatore ? this.item.moltiplicatore : this.item.hours,
 			discounts: [
 				{
 					value: 0.05,
@@ -820,7 +846,8 @@ Vue.component('item-modal', {
 				}
 			],
 			cachePriceVal: this.price(),
-			selected: null
+			selected: null,
+			totalPrice: 0
 
 		}
 	},
@@ -839,32 +866,28 @@ Vue.component('item-modal', {
 				quantity: this.quantityVal,
 				price: this.priceVal,
 				show: this.item.show,
+				hours: this.hours,
+				discount: this.selected,
 				option: this.item.option
 			}
-			console.log('dataSent', updatedItem);
 			this.$emit('item-update', updatedItem);
 		},
 		quantity() {
 			if (this.item.qty) {
 				return Number(this.item.qty);
-			}
-
-			if (this.item.quantity) {
+			} else if (this.item.quantity) {
 				return Number(this.item.quantity);
 			}
 		},
 		price() {
 			if (this.item.valore) {
 				return Number(this.item.valore);
-			}
-
-			if (this.item.price) {
+			} else if (this.item.price) {
 				return Number(this.item.price);
-			}
-
-			if (this.item.ultimo_prezzo) {
+			} else if (this.item.ultimo_prezzo) {
 				return Number(this.item.ultimo_prezzo);
 			}
+			return 0.00;
 		},
 		openRemoveModal() {
 			let itemId = this.item.id;
@@ -874,12 +897,25 @@ Vue.component('item-modal', {
 			this.$emit('close-item-modal');
 		},
 		selectedChanged(event) {
-			if (event.target.value === '') {
-				this.priceVal = this.cachePriceVal;
-			}
 			if (event.target.value !== '') {
-				this.priceVal = this.cachePriceVal;
-				this.priceVal += this.priceVal * event.target.value;
+				this.totalPrice = this.priceVal * this.quantityVal;
+				this.totalPrice = this.totalPrice - (this.totalPrice * event.target.value);
+			} else {
+				this.totalPrice = this.priceVal * this.quantityVal;
+			}
+			if (this.staff) {
+				this.totalPrice *= Number(this.hours);
+			}
+		},
+		priceChanged() {
+			if (this.selected) {
+				this.totalPrice = this.priceVal * this.quantityVal;
+				this.totalPrice = this.totalPrice - (this.totalPrice * this.selected);
+			} else {
+				this.totalPrice = this.priceVal * this.quantityVal;
+			}
+			if (this.staff) {
+				this.totalPrice *= Number(this.hours);
 			}
 		}
 	},
@@ -892,19 +928,31 @@ Vue.component('item-modal', {
 			if (this.item.name) {
 				return this.item.name;
 			}
-		},
-	
+		}
+	},
+	mounted() {
+		if (this.selected) {
+			this.totalPrice = this.priceVal * this.quantityVal;
+			this.totalPrice = this.totalPrice - (this.totalPrice * this.selected);
+		} else {
+			this.totalPrice = this.priceVal * this.quantityVal;
+		}
+
+		if (this.staff) {
+			this.totalPrice *= Number(this.hours);
+		}
 	}
 });
 
 // item LIST ITEM COMPONENT
 Vue.component('item-list', {
-	props: ['item', 'currency', 'catMinVal', 'quiverCode'],
+	props: ['item', 'currency', 'catMinVal', 'quiverCode', 'staff'],
 	template: `
 		<tr>
-			<td>{{ item.descrizione }}</td>
-			<td>{{ Number(item.ultimo_prezzo).toFixed(2) }} {{ currency }}</td>
+			<td>{{ name }}</td>
+			<td>{{ price.toFixed(2) }} {{ currency }}</td>
 			<td class="small"><input class="input" v-model.number="cacheQuantity"></td>
+			<td v-if="staff"class="small"><input class="input" v-model.number="hours"></td>
 			<td>
 				<a class="button is-success is-fullwidth" :class="{'is-loading':loading}" @click="additem">
 					<span class="icon" v-if="addedItem">
@@ -921,20 +969,22 @@ Vue.component('item-list', {
 			cacheQuantity: 1,
 			loading: false,
 			addMessage: 'Add',
-			addedItem: true
+			addedItem: true,
+			hours: 0
 		}
 	},
 	methods: {
 		additem() {
 			this.loading = true;
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?createSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&arrowId=${this.item.id}&descrizione=${this.item.descrizione}&qty=${this.cacheQuantity}&valore=${this.item.ultimo_prezzo}&note=${this.item.note}`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?createSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&arrowId=${this.item.id}&descrizione=${this.name}&qty=${this.cacheQuantity}&valore=${this.price}&note=${this.item.note}&moltiplicatore=${this.hours}`)
 			.then(response => {
 				let item = {
 					id: response.data.dati,
-					name: this.item.descrizione,
+					name: this.name,
 					quantity: Number(this.cacheQuantity),
-					price: this.item.ultimo_prezzo ? Number(this.item.ultimo_prezzo) : Number(this.item.valore),
+					price: this.price,
 					show: this.item.show,
+					hours: this.hours,
 					option: this.item.option
 				}
 				console.log(item);
@@ -958,10 +1008,35 @@ Vue.component('item-list', {
 				// always executed
 			});
 		}
+	},
+	computed: {
+		name() {
+			if (this.item.descrizione) {
+				return this.item.descrizione;
+			} else if (this.item.name) {
+				return this.item.name;
+			} else if (this.item.funzione) {
+				return this.item.funzione;
+			}
+		},
+		price() {
+			if (this.item.valore) {
+				return Number(this.item.valore);
+			} else if (this.item.price) {
+				return Number(this.item.price);
+			} else if (this.item.ultimo_prezzo) {
+				return Number(this.item.ultimo_prezzo);
+			}
+			return Number(0);
+		},
 	}
 });
 
-// VIEW MAIN
-let vm = new Vue({
-	el: '#app'
-});
+if (eventoId !== null) {
+	// VIEW MAIN
+	let vm = new Vue({
+		el: '#app'
+	});
+} else {
+	alert('eventoId is required!');
+}
