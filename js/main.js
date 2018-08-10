@@ -621,7 +621,7 @@ Vue.component('added-item', {
 	},
 	methods: {
 		updateItem(updatedItem) {
-			
+			this.hours = updatedItem.hours;
 			if (updatedItem.quantity) {
 				var queryQty = `&qty=${updatedItem.quantity}`;
 			}
@@ -772,11 +772,11 @@ Vue.component('item-modal', {
 						<section class="modal-card-body columns is-mobile is-centered">
 							<div class="column is-one-fifth">
 								<label class="label" for="quantity">Quantity</label>
-								<input class="input" name="quantity" v-model.number="quantityVal" :placeholder="this.quantityPlaceholder">
+								<input class="input" name="quantity" v-model.number="quantityVal" @change="priceChanged" :placeholder="this.quantityPlaceholder">
 							</div>
 							<div v-if="staff" class="column is-one-fifth">
 								<label class="label" for="hours">Hours</label>
-								<input class="input" name="hours" v-model.number="hours" :placeholder="this.quantityPlaceholder">
+								<input class="input" name="hours" v-model.number="hours" @change="priceChanged" :placeholder="this.quantityPlaceholder">
 							</div>
 							<div class="column is-one-fifth">
 								<label class="label" for="price">Price {{ currency }}</label>
@@ -870,6 +870,7 @@ Vue.component('item-modal', {
 				discount: this.selected,
 				option: this.item.option
 			}
+			console.log('updatedItem', updatedItem)
 			this.$emit('item-update', updatedItem);
 		},
 		quantity() {
@@ -908,6 +909,17 @@ Vue.component('item-modal', {
 			}
 		},
 		priceChanged() {
+			if (this.selected) {
+				this.totalPrice = this.priceVal * this.quantityVal;
+				this.totalPrice = this.totalPrice - (this.totalPrice * this.selected);
+			} else {
+				this.totalPrice = this.priceVal * this.quantityVal;
+			}
+			if (this.staff) {
+				this.totalPrice *= Number(this.hours);
+			}
+		},
+		hoursChanged() {
 			if (this.selected) {
 				this.totalPrice = this.priceVal * this.quantityVal;
 				this.totalPrice = this.totalPrice - (this.totalPrice * this.selected);
