@@ -6,6 +6,9 @@
 // 	$("#container").fadeIn(400); 
 // });
 
+const params = (new URL(document.location)).searchParams;
+const eventoId = params.get("eventoId");
+
 var eventBus = new Vue();
 
 // MAIN COMPONENT
@@ -135,7 +138,7 @@ Vue.component('content-container', {
 				instanceParameter = 'get_veichels';
 			}
 
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?${instanceParameter}&token=1`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?${instanceParameter}&token=1&eventoId=${eventoId}`)
 			.then(response => {
 				// handle success
 				this.instances[index].categories = response.data.dati;
@@ -634,10 +637,11 @@ Vue.component('added-item', {
 				var queryNote = `&note=${item.note}`;
 			}
 			this.loading = true;
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?updateSynapsy&token=1&quiverCode=${this.quiverCode}&recordId=${item.id}${queryQty}${queryValore}${queryNote}`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?updateSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&recordId=${item.id}${queryQty}${queryValore}${queryNote}`)
 			.then(response => {
 				console.log(response.data);
 				this.updateItemCached(updatedItem);
+				this.itemModal = false;
 				eventBus.$emit('item-update', item);
 				this.$emit('item-update', item);
 				this.loading = false;
@@ -657,7 +661,7 @@ Vue.component('added-item', {
 				id: this.itemCached.id
 			}
 			this.loading = true;
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?removeSynapsy&token=1&quiverCode=${this.quiverCode}&recordId=${item.id}`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?removeSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&recordId=${item.id}`)
 			.then(response => {
 				console.log(response.data);
 				this.loading = false;
@@ -777,6 +781,15 @@ Vue.component('item-modal', {
 								<label class="label" for="price">Price {{ currency }}</label>
 								<input class="input" name="price" v-model.number="priceVal" :placeholder="this.pricePlaceholder">
 							</div>
+							<div class="column is-one-fifth">
+								<label class="label" for="discount">Discount</label>
+								<div class="select is-fullwidth" name="discount">
+									<select v-model="selected" @change="selectedChanged">
+										<option :value="null">None</option>
+										<option v-for="discount in discounts" :value="discount.value">{{ discount.option }}</option>
+									</select>
+								</div>
+							</div>
 							<div class="column">
 								<label class="label" for="option">Option</label>
 								<input class="input" name="option" v-model="item.option">
@@ -809,10 +822,26 @@ Vue.component('item-modal', {
 	`,
 	data() {
 		return {
-			priceVal: null,
+			priceVal: this.price(),
 			pricePlaceholder: this.price(),
 			quantityPlaceholder: this.quantity(),
-			quantityVal: null,
+			quantityVal: this.quantity(),
+			discounts: [
+				{
+					value: 0.05,
+					option: '5%'
+				},
+				{
+					value: 0.10,
+					option: '10%'
+				},
+				{
+					value: 0.20,
+					option: '20%'
+				}
+			],
+			cachePriceVal: this.price(),
+			selected: null
 
 		}
 	},
@@ -864,6 +893,15 @@ Vue.component('item-modal', {
 		},
 		closeItemModal() {
 			this.$emit('close-item-modal');
+		},
+		selectedChanged(event) {
+			if (event.target.value === '') {
+				this.priceVal = this.cachePriceVal;
+			}
+			if (event.target.value !== '') {
+				this.priceVal = this.cachePriceVal;
+				this.priceVal += this.priceVal * event.target.value;
+			}
 		}
 	},
 	computed: {
@@ -876,6 +914,7 @@ Vue.component('item-modal', {
 				return this.item.name;
 			}
 		},
+	
 	}
 });
 
@@ -909,7 +948,7 @@ Vue.component('item-list', {
 	methods: {
 		additem() {
 			this.loading = true;
-			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?createSynapsy&token=1&quiverCode=${this.quiverCode}&arrowId=${this.item.id}&descrizione=${this.item.descrizione}&qty=${this.cacheQuantity}&valore=${this.item.ultimo_prezzo}&note=${this.item.note}`)
+			axios.get(`https://stile.condivision.cloud/fl_api/v2.0/?createSynapsy&token=1&eventoId=${eventoId}&quiverCode=${this.quiverCode}&arrowId=${this.item.id}&descrizione=${this.item.descrizione}&qty=${this.cacheQuantity}&valore=${this.item.ultimo_prezzo}&note=${this.item.note}`)
 			.then(response => {
 				let item = {
 					id: response.data.dati,
