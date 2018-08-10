@@ -772,15 +772,15 @@ Vue.component('item-modal', {
 						<section class="modal-card-body columns is-mobile is-centered">
 							<div class="column is-one-fifth">
 								<label class="label" for="quantity">Quantity</label>
-								<input class="input" name="quantity" v-model.number="quantityVal" @change="priceChanged" :placeholder="this.quantityPlaceholder">
+								<input class="input" name="quantity" v-model.number="quantityVal" @change="dataChanged" :placeholder="this.quantityPlaceholder">
 							</div>
 							<div v-if="staff" class="column is-one-fifth">
 								<label class="label" for="hours">Hours</label>
-								<input class="input" name="hours" v-model.number="hours" @change="priceChanged" :placeholder="this.quantityPlaceholder">
+								<input class="input" name="hours" v-model.number="hours" @change="dataChanged" :placeholder="this.quantityPlaceholder">
 							</div>
 							<div class="column is-one-fifth">
 								<label class="label" for="price">Price {{ currency }}</label>
-								<input class="input" name="price" v-model.number="priceVal" @change="priceChanged" :placeholder="this.pricePlaceholder">
+								<input class="input" name="price" v-model.number="priceVal" @change="dataChanged" :placeholder="this.pricePlaceholder">
 							</div>
 							<div class="column is-one-fifth">
 								<label class="label" for="discount">Discount</label>
@@ -908,7 +908,7 @@ Vue.component('item-modal', {
 				this.totalPrice *= Number(this.hours);
 			}
 		},
-		priceChanged() {
+		dataChanged() {
 			if (this.selected) {
 				this.totalPrice = this.priceVal * this.quantityVal;
 				this.totalPrice = this.totalPrice - (this.totalPrice * this.selected);
