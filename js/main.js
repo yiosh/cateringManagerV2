@@ -1,11 +1,3 @@
-/*Avvio*/
-// $(document).ready(function() {
-	
-// 	/*PRELOAD CONTENT */
-// 	$("#preloader").fadeOut(100);
-// 	$("#container").fadeIn(400); 
-// });
-
 const params = (new URL(document.location)).searchParams;
 const eventoId = params.get("eventoId");
 
@@ -439,11 +431,6 @@ Vue.component('sub-category', {
 				this.show = true;
 			}
 			this.addedItems.push(newItem);
-			// this.subCategory.items.filter(item => {
-			// 	if (item.id === newItem.id) {
-			// 		this.addedItems.push(item);
-			// 	}
-			// });
 			this.addedItems.forEach(item => {
 				if (item.quantity && item.price) {
 					this.total += item.quantity * item.price;
@@ -466,15 +453,7 @@ Vue.component('sub-category', {
 		},
 		updateItem(updatedItem) {
 			this.total = 0;
-			// this.addedItems.forEach(item => {
-			// 	if (item.id === updatedItem.id) {
-			// 		console.log('oldItem', item);
-			// 		// item.quantity = updatedItem.quantity;
-			// 		// item.price = updatedItem.price;
-			// 		// item.option = updatedItem.option;
-					console.log('newItem', updatedItem);
-			// 	}
-			// });
+			console.log('newItem', updatedItem);
 			
 			this.addedItems.forEach(item => {
 				if (item.quantity && item.price) {
